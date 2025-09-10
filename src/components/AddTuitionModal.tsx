@@ -7,7 +7,7 @@ interface AddTuitionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: {
-    studentEmail: string;
+    studentEmail?: string;
     subject: string;
     startTime: string;
     endTime: string;
@@ -34,7 +34,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
     setError('');
 
     // Basic validation
-    if (!formData.studentEmail || !formData.subject || !formData.startTime || !formData.endTime) {
+    if (!formData.subject || !formData.startTime || !formData.endTime) {
       setError('Please fill in all required fields');
       return;
     }
@@ -49,7 +49,17 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
       return;
     }
 
-    onSubmit(formData);
+    // Only include studentEmail if it's provided
+    const submitData = {
+      subject: formData.subject,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      daysPerWeek: formData.daysPerWeek,
+      plannedClassesPerMonth: formData.plannedClassesPerMonth,
+      ...(formData.studentEmail && { studentEmail: formData.studentEmail })
+    };
+    
+    onSubmit(submitData);
   };
 
   const handleClose = () => {
@@ -92,7 +102,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
           <div className="space-y-4">
             <div>
               <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                Student Email *
+                Student Email
               </label>
               <input
                 id="studentEmail"
@@ -100,10 +110,10 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                 value={formData.studentEmail}
                 onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="student@example.com"
-                required
+                placeholder="student@example.com (optional - can be added later)"
                 disabled={isLoading}
               />
+              <p className="text-xs text-gray-500 mt-1">Optional: You can invite students to collaborate later</p>
             </div>
 
             <div>

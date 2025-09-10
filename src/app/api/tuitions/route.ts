@@ -17,27 +17,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { studentEmail, subject, startTime, endTime, daysPerWeek, plannedClassesPerMonth } = body;
 
-    if (!studentEmail || !subject || !startTime || !endTime || !daysPerWeek || !plannedClassesPerMonth) {
+    if (!subject || !startTime || !endTime || !daysPerWeek || !plannedClassesPerMonth) {
       return NextResponse.json(
-        { success: false, message: 'All fields are required' },
+        { success: false, message: 'Subject, start time, end time, days per week, and planned classes per month are required' },
         { status: 400 }
       );
     }
 
-    // Find student by email
-    const student = await getUserByEmail(studentEmail);
-    if (!student) {
-      return NextResponse.json(
-        { success: false, message: 'Student not found' },
-        { status: 404 }
-      );
-    }
+    let student = null;
+    if (studentEmail) {
+      // Find student by email if provided
+      student = await getUserByEmail(studentEmail);
+      if (!student) {
+        return NextResponse.json(
+          { success: false, message: 'Student not found' },
+          { status: 404 }
+        );
+      }
 
-    if (student.role !== 'student') {
-      return NextResponse.json(
-        { success: false, message: 'User is not a student' },
-        { status: 400 }
-      );
+      if (student.role !== 'student') {
+        return NextResponse.json(
+          { success: false, message: 'User is not a student' },
+          { status: 400 }
+        );
+      }
     }
 
     const currentDate = new Date();
@@ -46,9 +49,9 @@ export async function POST(request: NextRequest) {
     const result = await createTuition({
       teacherId: session.user.id,
       teacherName: session.user.name!,
-      studentId: student.uid,
-      studentName: student.name,
-      studentEmail: student.email,
+      studentId: student?.uid || null,
+      studentName: student?.name || null,
+      studentEmail: student?.email || null,
       subject,
       startTime,
       endTime,

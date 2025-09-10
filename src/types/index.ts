@@ -16,9 +16,9 @@ export interface Tuition {
   id: string;
   teacherId: string;
   teacherName: string;
-  studentId: string;
-  studentName: string;
-  studentEmail: string;
+  studentId: string | null;
+  studentName: string | null;
+  studentEmail: string | null;
   subject: string;
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"

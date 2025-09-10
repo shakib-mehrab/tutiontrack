@@ -29,9 +29,13 @@ export async function createTuition(tuitionData: Omit<Tuition, 'id' | 'createdAt
 
     await setDoc(docRef, newTuition);
 
-    // Update both teacher and student's linkedTuitions
+    // Update teacher's linkedTuitions
     await updateUserTuitions(tuitionData.teacherId, docRef.id, 'add');
-    await updateUserTuitions(tuitionData.studentId, docRef.id, 'add');
+    
+    // Update student's linkedTuitions only if there is a student
+    if (tuitionData.studentId) {
+      await updateUserTuitions(tuitionData.studentId, docRef.id, 'add');
+    }
 
     return { success: true, message: 'Tuition created successfully', tuitionId: docRef.id };
   } catch (error) {
@@ -186,7 +190,11 @@ export async function deleteTuition(tuitionId: string): Promise<{ success: boole
 
     // Remove tuition reference from users
     await updateUserTuitions(tuition.teacherId, tuitionId, 'remove');
-    await updateUserTuitions(tuition.studentId, tuitionId, 'remove');
+    
+    // Remove from student only if there is a student
+    if (tuition.studentId) {
+      await updateUserTuitions(tuition.studentId, tuitionId, 'remove');
+    }
 
     // Delete tuition
     await deleteDoc(tuitionRef);

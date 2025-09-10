@@ -22,7 +22,7 @@ import { Tuition } from '@/types';
 import { downloadTuitionPDF } from '@/lib/pdf-generator';
 
 interface TuitionFormData {
-  studentEmail: string;
+  studentEmail?: string;
   subject: string;
   startTime: string;
   endTime: string;
@@ -362,7 +362,7 @@ export default function TeacherDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-lg font-medium text-gray-900">
-                              {tuition.subject} - {tuition.studentName}
+                              {tuition.subject}{tuition.studentName ? ` - ${tuition.studentName}` : ' (No student assigned)'}
                             </h3>
                             <div className="flex items-center space-x-2">
                               <button
@@ -392,7 +392,9 @@ export default function TeacherDashboard() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                             <div>
                               <p className="text-xs text-gray-500">Student Email</p>
-                              <p className="text-sm text-gray-900">{tuition.studentEmail}</p>
+                              <p className="text-sm text-gray-900">
+                                {tuition.studentEmail || 'Not assigned yet'}
+                              </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Schedule</p>
