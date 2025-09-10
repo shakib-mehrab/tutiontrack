@@ -39,6 +39,9 @@ export default function TeacherDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedTuitionId, setSelectedTuitionId] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -104,12 +107,17 @@ export default function TeacherDashboard() {
     }
   };
 
-  const handleClassUpdate = async (tuitionId: string, action: 'increment' | 'decrement' | 'reset') => {
+  const handleClassUpdate = async (tuitionId: string, action: 'increment' | 'decrement' | 'reset', classDate?: string) => {
     try {
+      const body: { action: string; classDate?: string } = { action };
+      if (classDate) {
+        body.classDate = classDate;
+      }
+
       const response = await fetch(`/api/tuitions/${tuitionId}/classes`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify(body),
       });
       
       const data = await response.json();
@@ -118,12 +126,28 @@ export default function TeacherDashboard() {
         await fetchTuitions(); // Refresh the list
         setSuccess(`Class count ${action}ed successfully`);
         setTimeout(() => setSuccess(''), 2000);
+        setShowDateModal(false);
+        setSelectedDate('');
+        setSelectedTuitionId('');
       } else {
         setError(data.message || `Failed to ${action} class count`);
       }
     } catch (error) {
       setError(`Failed to ${action} class count`);
       console.error(`Error ${action}ing class count:`, error);
+    }
+  };
+
+  const handleAddClassWithDate = (tuitionId: string) => {
+    setSelectedTuitionId(tuitionId);
+    setShowDateModal(true);
+  };
+
+  const handleAddClass = () => {
+    if (selectedDate) {
+      handleClassUpdate(selectedTuitionId, 'increment', selectedDate);
+    } else {
+      handleClassUpdate(selectedTuitionId, 'increment');
     }
   };
 
@@ -357,30 +381,39 @@ export default function TeacherDashboard() {
                 {tuitions.map((tuition) => {
                   const progress = calculateProgress(tuition.takenClasses, tuition.plannedClassesPerMonth);
                   return (
-                    <div key={tuition.id} className="px-6 py-4">
+                    <div key={tuition.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
+                        <div className="flex-1 cursor-pointer" onClick={() => router.push(`/tuition/${tuition.id}`)}>
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
                               {tuition.subject}{tuition.studentName ? ` - ${tuition.studentName}` : ' (No student assigned)'}
                             </h3>
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => handleClassUpdate(tuition.id, 'decrement')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClassUpdate(tuition.id, 'decrement');
+                                }}
                                 className="p-1 text-red-600 hover:bg-red-50 rounded"
                                 title="Decrease class count"
                               >
                                 <ChevronDown className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleClassUpdate(tuition.id, 'increment')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddClassWithDate(tuition.id);
+                                }}
                                 className="p-1 text-green-600 hover:bg-green-50 rounded"
-                                title="Increase class count"
+                                title="Add class (with date)"
                               >
                                 <ChevronUp className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => handleClassUpdate(tuition.id, 'reset')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleClassUpdate(tuition.id, 'reset');
+                                }}
                                 className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                                 title="Reset class count"
                               >
@@ -427,7 +460,10 @@ export default function TeacherDashboard() {
 
                         <div className="ml-4">
                           <button 
-                            onClick={() => handleExportPDF(tuition)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportPDF(tuition);
+                            }}
                             className="text-blue-600 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50"
                             title="Export PDF Report"
                             aria-label="Export PDF Report"
@@ -454,6 +490,51 @@ export default function TeacherDashboard() {
         onSubmit={handleAddTuition}
         isLoading={isSubmitting}
       />
+
+      {/* Add Class Modal */}
+      {showDateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add Class</h3>
+            
+            <div className="mb-4">
+              <label htmlFor="classDate" className="block text-sm font-medium text-gray-700 mb-2">
+                Class Date (optional)
+              </label>
+              <input
+                id="classDate"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Select date"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to use today&apos;s date
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDateModal(false);
+                  setSelectedDate('');
+                  setSelectedTuitionId('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddClass}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

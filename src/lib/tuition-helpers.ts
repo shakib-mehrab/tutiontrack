@@ -74,7 +74,8 @@ export async function updateClassCount(
   tuitionId: string, 
   action: 'increment' | 'decrement', 
   userId: string, 
-  userName: string
+  userName: string,
+  classDate?: Date // Optional: specify the actual class date
 ): Promise<{ success: boolean; message: string }> {
   try {
     const tuitionRef = doc(db, 'tuitions', tuitionId);
@@ -101,13 +102,20 @@ export async function updateClassCount(
       updatedAt: Timestamp.fromDate(new Date()),
     });
 
-    // Log the action
-    await addClassLog({
+    // Log the action with class date
+    const logData: Omit<ClassLog, 'id' | 'date' | 'createdAt'> = {
       tuitionId,
       actionType: action,
       addedBy: userId,
       addedByName: userName,
-    });
+    };
+
+    // For increment actions, store the actual class date
+    if (action === 'increment') {
+      logData.classDate = Timestamp.fromDate(classDate || new Date());
+    }
+
+    await addClassLog(logData);
 
     return { success: true, message: `Class count ${action}ed successfully` };
   } catch (error) {
@@ -142,6 +150,27 @@ export async function getClassLogs(tuitionId: string): Promise<ClassLog[]> {
     } as ClassLog));
   } catch (error) {
     console.error('Error fetching class logs:', error);
+    return [];
+  }
+}
+
+export async function getClassDates(tuitionId: string): Promise<ClassLog[]> {
+  try {
+    const logsRef = collection(db, 'classLogs');
+    const q = query(
+      logsRef, 
+      where('tuitionId', '==', tuitionId),
+      where('actionType', '==', 'increment'),
+      orderBy('classDate', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as ClassLog));
+  } catch (error) {
+    console.error('Error fetching class dates:', error);
     return [];
   }
 }

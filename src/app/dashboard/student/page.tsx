@@ -183,17 +183,20 @@ export default function StudentDashboard() {
           ) : (
             <div className="divide-y divide-gray-200">
               {tuitions.map((tuition) => (
-                <div key={tuition.id} className="p-6">
+                <div key={tuition.id} className="p-6 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => router.push(`/tuition/${tuition.id}`)}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{tuition.subject}</h3>
+                      <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">{tuition.subject}</h3>
                       <div className="flex items-center text-sm text-gray-600 mt-1">
                         <User className="h-4 w-4 mr-1" />
                         <span>Teacher: {tuition.teacherName}</span>
                       </div>
                     </div>
                     <button 
-                      onClick={() => handleExportPDF(tuition)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExportPDF(tuition);
+                      }}
                       className="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm hover:bg-blue-200 flex items-center"
                     >
                       <Download className="h-4 w-4 mr-2" />

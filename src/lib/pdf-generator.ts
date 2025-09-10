@@ -46,10 +46,65 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
 
   yPosition += 20;
 
-  // Class Logs Section
-  if (logs && logs.length > 0) {
+  // Separate class dates and activity logs
+  const classDates = logs.filter(log => log.actionType === 'increment' && log.classDate);
+  const activityLogs = logs;
+
+  // Class Dates Section
+  if (classDates && classDates.length > 0) {
     pdf.setFontSize(16);
-    pdf.text('Class Log', 20, yPosition);
+    pdf.text('Class Dates', 20, yPosition);
+    
+    yPosition += 15;
+    
+    // Table headers
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('Class #', 25, yPosition);
+    pdf.text('Date', 80, yPosition);
+    pdf.text('Added By', 130, yPosition);
+    
+    yPosition += 5;
+    pdf.line(20, yPosition, pageWidth - 20, yPosition);
+    yPosition += 10;
+
+    // Class dates rows
+    pdf.setFont(undefined, 'normal');
+    classDates.forEach((log, index) => {
+      const classDate = log.classDate || log.date;
+      let date;
+      try {
+        if (classDate && typeof classDate === 'object' && 'seconds' in classDate) {
+          date = new Date((classDate as { seconds: number }).seconds * 1000).toLocaleDateString();
+        } else if (classDate && typeof classDate === 'object' && 'toDate' in classDate) {
+          date = (classDate as { toDate: () => Date }).toDate().toLocaleDateString();
+        } else {
+          date = new Date(classDate as string | number | Date).toLocaleDateString();
+        }
+      } catch {
+        date = 'Invalid Date';
+      }
+      
+      pdf.text(`Class ${index + 1}`, 25, yPosition);
+      pdf.text(date, 80, yPosition);
+      pdf.text(log.addedByName, 130, yPosition);
+      
+      yPosition += 10;
+      
+      // Add new page if needed
+      if (yPosition > 270) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+    });
+
+    yPosition += 10;
+  }
+
+  // Activity Log Section
+  if (activityLogs && activityLogs.length > 0) {
+    pdf.setFontSize(16);
+    pdf.text('Activity Log', 20, yPosition);
     
     yPosition += 15;
     
@@ -66,8 +121,20 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
 
     // Table rows
     pdf.setFont(undefined, 'normal');
-    logs.forEach(log => {
-      const date = new Date(log.date.seconds * 1000).toLocaleDateString();
+    activityLogs.forEach(log => {
+      let date;
+      try {
+        if (log.date && typeof log.date === 'object' && 'seconds' in log.date) {
+          date = new Date((log.date as { seconds: number }).seconds * 1000).toLocaleDateString();
+        } else if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
+          date = (log.date as { toDate: () => Date }).toDate().toLocaleDateString();
+        } else {
+          date = new Date(log.date as string | number | Date).toLocaleDateString();
+        }
+      } catch {
+        date = 'Invalid Date';
+      }
+      
       const action = log.actionType === 'increment' ? 'Class Added' : 
                     log.actionType === 'decrement' ? 'Class Removed' : 'Manual Entry';
       

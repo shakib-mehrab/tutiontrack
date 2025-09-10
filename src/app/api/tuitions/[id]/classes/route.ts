@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const resolvedParams = await params;
     const body = await request.json();
-    const { action } = body;
+    const { action, classDate } = body;
 
     if (!['increment', 'decrement', 'reset'].includes(action)) {
       return NextResponse.json(
@@ -28,7 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (action === 'reset') {
       result = await resetClassCount(resolvedParams.id, session.user.id, session.user.name!);
     } else {
-      result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!);
+      const date = classDate ? new Date(classDate) : undefined;
+      result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!, date);
     }
 
     return NextResponse.json(result, {

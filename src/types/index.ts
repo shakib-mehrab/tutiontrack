@@ -33,11 +33,12 @@ export interface Tuition {
 export interface ClassLog {
   id: string;
   tuitionId: string;
-  date: Timestamp;
+  date: Timestamp; // When the log entry was created
   actionType: 'increment' | 'decrement' | 'manual';
   addedBy: string; // User ID who made the change
   addedByName: string;
   description?: string;
+  classDate?: Timestamp; // The actual date when the class happened (for increment actions)
   createdAt: Timestamp;
 }
 
