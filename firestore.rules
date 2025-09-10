@@ -1,0 +1,54 @@
+// Firestore Security Rules for TuitionTrack
+// Copy and paste these rules into your Firebase Console -> Firestore Database -> Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow creating user documents during registration (admin SDK)
+      allow create: if request.auth != null;
+    }
+    
+    // Tuitions collection
+    match /tuitions/{tuitionId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.teacherId || 
+         request.auth.uid in resource.data.studentIds);
+      
+      // Allow teachers to create tuitions
+      allow create: if request.auth != null;
+      
+      // Classes subcollection
+      match /classes/{classId} {
+        allow read, write: if request.auth != null && 
+          (request.auth.uid == get(/databases/$(database)/documents/tuitions/$(tuitionId)).data.teacherId ||
+           request.auth.uid in get(/databases/$(database)/documents/tuitions/$(tuitionId)).data.studentIds);
+      }
+      
+      // Logs subcollection
+      match /logs/{logId} {
+        allow read, write: if request.auth != null && 
+          (request.auth.uid == get(/databases/$(database)/documents/tuitions/$(tuitionId)).data.teacherId ||
+           request.auth.uid in get(/databases/$(database)/documents/tuitions/$(tuitionId)).data.studentIds);
+      }
+    }
+    
+    // Students collection (if you have one)
+    match /students/{studentId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == studentId || 
+         request.auth.uid in resource.data.teacherIds);
+      
+      allow create: if request.auth != null;
+    }
+    
+    // Allow read access to verify user data during authentication
+    match /users/{userId} {
+      allow read: if request.auth != null;
+    }
+  }
+}

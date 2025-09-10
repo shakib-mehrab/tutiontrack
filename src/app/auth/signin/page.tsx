@@ -1,23 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Mail, RefreshCw } from 'lucide-react';
 
-export default function SignIn() {
+function SignInContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccessMessage('Email verified successfully! You can now sign in.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
+    setShowResendVerification(false);
 
     try {
       const result = await signIn('credentials', {
@@ -27,7 +40,12 @@ export default function SignIn() {
       });
 
       if (result?.error) {
-        setError('Invalid credentials or email not verified');
+        if (result.error.includes('verify')) {
+          setError('Please verify your email before signing in.');
+          setShowResendVerification(true);
+        } else {
+          setError('Invalid email or password.');
+        }
       } else {
         router.push('/dashboard');
         router.refresh();
@@ -36,6 +54,38 @@ export default function SignIn() {
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSuccessMessage('Verification email sent! Please check your inbox.');
+        setShowResendVerification(false);
+        setError('');
+      } else {
+        setError(result.message);
+      }
+    } catch {
+      setError('Failed to resend verification email. Please try again.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -52,9 +102,29 @@ export default function SignIn() {
           <p className="text-gray-600">Sign in to your TuitionTrack account</p>
         </div>
 
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-600 text-sm">{successMessage}</p>
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-600 text-sm">{error}</p>
+            {showResendVerification && (
+              <button
+                onClick={handleResendVerification}
+                disabled={isResending}
+                className="mt-2 text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 disabled:opacity-50"
+              >
+                {isResending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4" />
+                )}
+                {isResending ? 'Sending...' : 'Resend verification email'}
+              </button>
+            )}
           </div>
         )}
 
@@ -123,5 +193,20 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }

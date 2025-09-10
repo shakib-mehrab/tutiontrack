@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { updateClassCount, resetClassCount } from '@/lib/tuition-helpers';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -13,6 +13,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       );
     }
 
+    const resolvedParams = await params;
     const body = await request.json();
     const { action } = body;
 
@@ -25,9 +26,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     let result;
     if (action === 'reset') {
-      result = await resetClassCount(params.id, session.user.id, session.user.name!);
+      result = await resetClassCount(resolvedParams.id, session.user.id, session.user.name!);
     } else {
-      result = await updateClassCount(params.id, action, session.user.id, session.user.name!);
+      result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!);
     }
 
     return NextResponse.json(result, {

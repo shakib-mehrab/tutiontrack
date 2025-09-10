@@ -7,6 +7,8 @@ export interface User {
   name: string;
   createdAt: Timestamp | Date;
   emailVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpiry?: Timestamp | Date;
   linkedTuitions?: string[]; // Array of tuition IDs
 }
 

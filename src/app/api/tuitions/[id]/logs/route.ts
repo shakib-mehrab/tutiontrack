@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getClassLogs } from '@/lib/tuition-helpers';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -13,7 +13,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const logs = await getClassLogs(params.id);
+    const resolvedParams = await params;
+    const logs = await getClassLogs(resolvedParams.id);
 
     return NextResponse.json({ success: true, logs });
   } catch (error) {
