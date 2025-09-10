@@ -5,7 +5,7 @@ export interface User {
   email: string;
   role: 'teacher' | 'student';
   name: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | Date;
   emailVerified: boolean;
   linkedTuitions?: string[]; // Array of tuition IDs
 }

@@ -1,6 +1,4 @@
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { User } from '@/types';
 
 export interface RegisterUserData {
@@ -13,38 +11,38 @@ export interface RegisterUserData {
 export async function registerUser(userData: RegisterUserData): Promise<{ success: boolean; message: string; uid?: string }> {
   try {
     // Check if user already exists in Firestore
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', userData.email));
-    const existingUsers = await getDocs(q);
+    const usersRef = adminDb.collection('users');
+    const existingUsers = await usersRef.where('email', '==', userData.email).get();
     
     if (!existingUsers.empty) {
       return { success: false, message: 'User with this email already exists' };
     }
 
-    // Create Firebase Auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-    const firebaseUser = userCredential.user;
+    // Create Firebase Auth user using Admin SDK
+    const userRecord = await adminAuth.createUser({
+      email: userData.email,
+      password: userData.password,
+      displayName: userData.name,
+      emailVerified: false,
+    });
 
-    // Send email verification
-    await sendEmailVerification(firebaseUser);
-
-    // Create user document in Firestore
+    // Create user document in Firestore using Admin SDK
     const newUser: User = {
-      uid: firebaseUser.uid,
+      uid: userRecord.uid,
       email: userData.email,
       role: userData.role,
       name: userData.name,
-      createdAt: Timestamp.fromDate(new Date()),
+      createdAt: new Date(),
       emailVerified: false,
       linkedTuitions: [],
     };
 
-    await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+    await adminDb.collection('users').doc(userRecord.uid).set(newUser);
 
     return { 
       success: true, 
       message: 'User registered successfully. Please check your email for verification.', 
-      uid: firebaseUser.uid 
+      uid: userRecord.uid 
     };
   } catch (error: unknown) {
     console.error('Registration error:', error);
@@ -55,8 +53,8 @@ export async function registerUser(userData: RegisterUserData): Promise<{ succes
 
 export async function getUserData(uid: string): Promise<User | null> {
   try {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (userDoc.exists) {
       return userDoc.data() as User;
     }
     return null;
@@ -68,9 +66,8 @@ export async function getUserData(uid: string): Promise<User | null> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email));
-    const querySnapshot = await getDocs(q);
+    const usersRef = adminDb.collection('users');
+    const querySnapshot = await usersRef.where('email', '==', email).get();
     
     if (!querySnapshot.empty) {
       return querySnapshot.docs[0].data() as User;
