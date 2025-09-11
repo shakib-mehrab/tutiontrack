@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     let result;
     if (action === 'reset') {
-      result = await resetClassCount(resolvedParams.id, session.user.id, session.user.name!);
+      result = await resetClassCount(resolvedParams.id);
     } else {
       const date = classDate ? new Date(classDate) : undefined;
       result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!, date);

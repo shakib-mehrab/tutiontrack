@@ -175,7 +175,7 @@ export async function getClassDates(tuitionId: string): Promise<ClassLog[]> {
   }
 }
 
-export async function resetClassCount(tuitionId: string, userId: string, userName: string): Promise<{ success: boolean; message: string }> {
+export async function resetClassCount(tuitionId: string): Promise<{ success: boolean; message: string }> {
   try {
     const tuitionRef = doc(db, 'tuitions', tuitionId);
     
