@@ -35,10 +35,11 @@ function SignInContent() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
         callbackUrl: '/dashboard'
       });
 
+      // This shouldn't execute if redirect: true works
       if (result?.error) {
         if (result.error.includes('verify')) {
           setError('Please verify your email before signing in.');
@@ -46,9 +47,6 @@ function SignInContent() {
         } else {
           setError('Invalid email or password.');
         }
-      } else if (result?.ok) {
-        // Force redirect to dashboard
-        window.location.href = '/dashboard';
       }
     } catch {
       setError('Something went wrong. Please try again.');
