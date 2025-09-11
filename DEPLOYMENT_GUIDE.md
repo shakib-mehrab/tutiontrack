@@ -240,8 +240,14 @@ NEXTAUTH_URL=http://localhost:3001
    - Check environment variables are set
    - Verify TypeScript errors are resolved
    - Check for missing dependencies
+   - **Firebase Admin Error**: Ensure all Firebase environment variables are set correctly
 
-2. **Authentication Issues:**
+2. **Firebase Admin "project_id" Error:**
+   - This is fixed in the latest version
+   - Firebase Admin initializes at runtime, not build time
+   - Ensure `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, and `FIREBASE_ADMIN_PRIVATE_KEY` are set
+
+3. **Authentication Issues:**
    - Verify Firebase configuration
    - Check NEXTAUTH_URL matches deployed URL
    - Ensure Firebase domains are authorized
