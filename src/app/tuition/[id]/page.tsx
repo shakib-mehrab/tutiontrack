@@ -191,17 +191,11 @@ export default function TuitionDetailsPage() {
     if (!selectedLogId) return;
 
     try {
-      const url = `/api/tuitions/${params.id}/delete-class?logId=${selectedLogId}`;
-      console.log('Making DELETE request to:', url);
-      
-      const response = await fetch(url, {
+      const response = await fetch(`/api/tuitions/${params.id}/logs/${selectedLogId}`, {
         method: 'DELETE',
       });
 
-      console.log('Response status:', response.status);
-
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.success) {
         setSuccess('Class deleted successfully');
