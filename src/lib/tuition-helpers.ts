@@ -80,14 +80,13 @@ export async function updateClassCount(
   isServerSide?: boolean // Flag to determine which Firebase SDK to use
 ): Promise<{ success: boolean; message: string }> {
   try {
-    let tuitionDoc: any;
     let tuition: Tuition;
 
     if (isServerSide) {
       // Use Firebase Admin SDK for server-side operations
       const adminDb = getAdminDb();
       const tuitionRef = adminDb.collection('tuitions').doc(tuitionId);
-      tuitionDoc = await tuitionRef.get();
+      const tuitionDoc = await tuitionRef.get();
       
       if (!tuitionDoc.exists) {
         return { success: false, message: 'Tuition not found' };
@@ -96,7 +95,7 @@ export async function updateClassCount(
     } else {
       // Use client-side Firebase SDK
       const tuitionRef = doc(db, 'tuitions', tuitionId);
-      tuitionDoc = await getDoc(tuitionRef);
+      const tuitionDoc = await getDoc(tuitionRef);
       
       if (!tuitionDoc.exists()) {
         return { success: false, message: 'Tuition not found' };
