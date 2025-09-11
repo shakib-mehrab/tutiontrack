@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     description: "Transform your teaching experience with our intelligent tuition tracking system.",
     images: [
       {
-        url: "/icons/icon-512x512.png",
+        url: "/tutiontrack/public/icons/android-launchericon-512-512.png",
         width: 512,
         height: 512,
         alt: "TuitionTrack Logo",
@@ -66,12 +66,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/tutiontrack/public/icons/android-launchericon-192-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/tutiontrack/public/icons/android-launchericon-512-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/tutiontrack/public/icons/android-launchericon-152-152.png", sizes: "152x152", type: "image/png" },
+      { url: "/tutiontrack/public/icons/android-launchericon-192-192.png", sizes: "192x192", type: "image/png" },
     ],
   },
 };
