@@ -42,7 +42,7 @@ Create a `.env.local` file in your project root with these variables:
 ```bash
 # NextAuth Configuration
 NEXTAUTH_SECRET=your-super-secret-key-here-min-32-chars
-NEXTAUTH_URL=https://your-app-name.vercel.app
+NEXTAUTH_URL=https://your-project-name.vercel.app
 
 # Firebase Client Configuration
 NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
@@ -63,6 +63,32 @@ FROM_EMAIL=TuitionTrack <noreply@yourdomain.com>
 # Production Settings
 NODE_ENV=production
 ```
+
+### Important: NEXTAUTH_URL Configuration
+
+The `NEXTAUTH_URL` depends on your deployment scenario:
+
+**🔸 For Vercel Deployment (No Custom Domain):**
+```bash
+NEXTAUTH_URL=https://your-project-name.vercel.app
+```
+
+**🔸 Common Vercel URL Patterns:**
+- `https://tuitiontrack.vercel.app` (if available)
+- `https://tuitiontrack-yourusername.vercel.app`
+- `https://tuitiontrack-git-main-yourusername.vercel.app`
+
+**🔸 For Custom Domain:**
+```bash
+NEXTAUTH_URL=https://yourdomain.com
+```
+
+**🔸 For Development:**
+```bash
+NEXTAUTH_URL=http://localhost:3001
+```
+
+> **Note:** You'll get the exact URL after your first Vercel deployment. Update the environment variable once you have it.
 
 ## 🌐 Vercel Deployment
 
@@ -93,13 +119,24 @@ NODE_ENV=production
    - Click "New Project"
    - Import your GitHub repository
    - Vercel will auto-detect Next.js settings
+   - **Build Command:** `npm run build` (default, should work automatically)
+   - **Install Command:** `npm install` (default)
 
 3. **Configure Environment Variables:**
    - In Vercel dashboard → Settings → Environment Variables
    - Add all variables from your `.env.local` file
+   - **Important**: Set `NEXTAUTH_URL` to your Vercel deployment URL:
+     - Format: `https://your-project-name.vercel.app`
+     - Example: `https://tuitiontrack-production.vercel.app`
    - Make sure to add them for all environments (Development, Preview, Production)
 
-4. **Configure Custom Domain (Optional):**
+4. **Get Your Vercel URL:**
+   - After first deployment, Vercel will assign you a URL like:
+     - `https://tuitiontrack-git-main-yourusername.vercel.app`
+     - Or custom: `https://your-project-name.vercel.app`
+   - Copy this URL and update `NEXTAUTH_URL` in environment variables
+
+5. **Configure Custom Domain (Optional):**
    - In Vercel dashboard → Settings → Domains
    - Add your custom domain
    - Update `NEXTAUTH_URL` to match your domain
