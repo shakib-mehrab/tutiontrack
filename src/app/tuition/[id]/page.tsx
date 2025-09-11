@@ -248,8 +248,10 @@ export default function TuitionDetailsPage() {
       date = new Date(timestamp.seconds * 1000);
     } else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
       date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as string | number);
     }
     
     return date.toLocaleDateString('en-US', {
@@ -267,8 +269,10 @@ export default function TuitionDetailsPage() {
       date = new Date(timestamp.seconds * 1000);
     } else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
       date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as string | number);
     }
     
     return date.toLocaleTimeString('en-US', {
@@ -306,12 +310,17 @@ export default function TuitionDetailsPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="text-center">
-          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <BookOpen className="h-8 w-8 text-white" />
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-2xl animate-pulse">
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
-          <p className="text-gray-600">Loading tuition details...</p>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <p className="text-white text-lg font-medium">Loading tuition details...</p>
+            <div className="mt-4 w-32 h-1 bg-white/20 rounded-full mx-auto overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -319,15 +328,20 @@ export default function TuitionDetailsPage() {
 
   if (error && !details) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            Go Back
-          </button>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 max-w-md mx-4">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 p-4 rounded-xl w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+              <ArrowLeft className="h-8 w-8 text-white" />
+            </div>
+            <p className="text-red-400 mb-6 text-lg">{error}</p>
+            <button
+              onClick={() => router.back()}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -339,144 +353,189 @@ export default function TuitionDetailsPage() {
   const progress = calculateProgress(tuition.takenClasses, tuition.plannedClassesPerMonth);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header Section */}
+        <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-white/70 hover:text-white mb-6 group transition-colors duration-200"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Dashboard
           </button>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 {tuition.subject}
                 {tuition.studentName && ` - ${tuition.studentName}`}
               </h1>
-              <p className="text-gray-600 mt-1">Tuition Details & Class History</p>
+              <p className="text-white/70 mt-2 text-sm sm:text-base">Comprehensive tuition management & tracking</p>
             </div>
             <button
               onClick={handleExportPDF}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 font-medium transform hover:scale-105"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
+              <Download className="h-5 w-5" />
+              <span className="hidden sm:inline">Export PDF</span>
+              <span className="sm:hidden">PDF</span>
             </button>
           </div>
         </div>
 
+        {/* Notifications */}
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
+          <div className="mb-6 bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-300 px-6 py-4 rounded-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+              {error}
+            </div>
           </div>
         )}
         
         {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-            {success}
+          <div className="mb-6 bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-300 px-6 py-4 rounded-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+              {success}
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Sidebar - Tuition Information */}
+          <div className="lg:col-span-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-white">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl mr-3">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
                 Tuition Information
               </h2>
               
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <User className="h-4 w-4 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">Teacher</p>
-                    <p className="font-medium">{tuition.teacherName}</p>
+              <div className="space-y-6">
+                {/* Teacher Info */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-2 rounded-lg">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white/60 text-sm">Teacher</p>
+                      <p className="font-semibold text-white">{tuition.teacherName}</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Student Info */}
                 {tuition.studentName ? (
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 text-gray-400 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-500">Student</p>
-                      <p className="font-medium">{tuition.studentName}</p>
-                      {tuition.studentEmail && (
-                        <p className="text-sm text-gray-500">{tuition.studentEmail}</p>
-                      )}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white/60 text-sm">Student</p>
+                        <p className="font-semibold text-white">{tuition.studentName}</p>
+                        {tuition.studentEmail && (
+                          <p className="text-white/50 text-sm">{tuition.studentEmail}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 text-yellow-600 mr-3" />
-                      <div>
-                        <p className="text-sm text-yellow-800 font-medium">No Student Assigned</p>
-                        <p className="text-xs text-yellow-600">Add a student to this tuition</p>
+                  <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-2 rounded-lg">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-amber-200 font-medium text-sm">No Student Assigned</p>
+                          <p className="text-amber-300/70 text-xs">Add a student to this tuition</p>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => setShowStudentModal(true)}
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                      >
+                        Add Student
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setShowStudentModal(true)}
-                      className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
-                    >
-                      Add Student
-                    </button>
                   </div>
                 )}
 
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">Schedule</p>
-                    <p className="font-medium">{tuition.startTime} - {tuition.endTime}</p>
+                {/* Schedule Info */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-2 rounded-lg">
+                      <Clock className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white/60 text-sm">Schedule</p>
+                      <p className="font-semibold text-white">{tuition.startTime} - {tuition.endTime}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">Days per Week</p>
-                    <p className="font-medium">{tuition.daysPerWeek}</p>
+                {/* Days per Week */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-2 rounded-lg">
+                      <Calendar className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white/60 text-sm">Days per Week</p>
+                      <p className="font-semibold text-white">{tuition.daysPerWeek}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="border-t pt-4">
-                  <p className="text-sm text-gray-500 mb-2">Monthly Progress</p>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">
+                {/* Progress Section */}
+                <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-5">
+                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    Monthly Progress
+                  </h3>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-white/80 text-sm">
                       {tuition.takenClasses} / {tuition.plannedClassesPerMonth} classes
                     </span>
-                    <span className={`text-sm font-medium ${getProgressColor(progress)}`}>
+                    <span className={`text-sm font-bold ${getProgressColor(progress)} bg-white/10 px-2 py-1 rounded-lg`}>
                       {Math.round(progress)}%
                     </span>
                   </div>
                   <ProgressBar progress={progress} />
                 </div>
 
-                <div className="border-t pt-4">
-                  <p className="text-sm text-gray-500 mb-3">Class Actions</p>
-                  <div className="space-y-2">
+                {/* Action Buttons */}
+                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                    Quick Actions
+                  </h3>
+                  <div className="space-y-3">
                     <button
                       onClick={() => setShowDateModal(true)}
-                      className="w-full flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4" />
                       Add Class
                     </button>
                     <button
                       onClick={() => handleClassUpdate('decrement')}
-                      className="w-full flex items-center justify-center px-3 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     >
-                      <Minus className="h-4 w-4 mr-2" />
+                      <Minus className="h-4 w-4" />
                       Remove Class
                     </button>
                     <button
                       onClick={() => handleClassUpdate('reset')}
-                      className="w-full flex items-center justify-center px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
+                      <RotateCcw className="h-4 w-4" />
                       Reset Count
                     </button>
                   </div>
@@ -485,70 +544,103 @@ export default function TuitionDetailsPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <CalendarDays className="h-5 w-5 mr-2 text-green-600" />
+          {/* Main Content Area */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Class Dates Card */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-white">
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-2 rounded-xl mr-3">
+                    <CalendarDays className="h-5 w-5 text-white" />
+                  </div>
                   Class Dates
+                  <span className="ml-auto bg-emerald-500/20 text-emerald-300 text-sm px-3 py-1 rounded-full font-medium">
+                    {classDates.length}
+                  </span>
                 </h2>
                 
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                   {classDates.length > 0 ? (
                     classDates.map((classLog, index) => (
-                      <div key={classLog.id} className="border-l-4 border-green-500 pl-3 py-2 bg-green-50 rounded-r">
-                        <div className="flex justify-between items-center">
-                          <p className="font-medium text-green-900">
-                            Class #{classDates.length - index}
-                          </p>
-                          <p className="text-sm text-green-700">
+                      <div key={classLog.id} className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-4 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all duration-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                            <p className="font-semibold text-emerald-200">
+                              Class #{classDates.length - index}
+                            </p>
+                          </div>
+                          <div className="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-1 rounded-lg font-medium">
                             {formatDate(classLog.classDate || classLog.date)}
-                          </p>
+                          </div>
                         </div>
-                        <p className="text-xs text-green-600 mt-1">
-                          Added by {classLog.addedByName} at {formatTime(classLog.date)}
+                        <p className="text-white/60 text-sm">
+                          Added by <span className="text-white font-medium">{classLog.addedByName}</span> at {formatTime(classLog.date)}
                         </p>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No classes recorded yet</p>
+                    <div className="text-center py-12">
+                      <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl p-8 border border-emerald-500/30">
+                        <CalendarDays className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
+                        <p className="text-white/60 text-lg">No classes recorded yet</p>
+                        <p className="text-white/40 text-sm mt-2">Start by adding your first class!</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <Clock className="h-5 w-5 mr-2 text-blue-600" />
+              {/* Activity Log Card */}
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-white">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl mr-3">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
                   Activity Log
+                  <span className="ml-auto bg-blue-500/20 text-blue-300 text-sm px-3 py-1 rounded-full font-medium">
+                    {logs.length}
+                  </span>
                 </h2>
                 
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                   {logs.length > 0 ? (
                     logs.map((log) => {
-                      const bgColor = log.actionType === 'increment' ? 'bg-green-50 border-green-500' :
-                                    log.actionType === 'decrement' ? 'bg-red-50 border-red-500' :
-                                    'bg-blue-50 border-blue-500';
-                      const textColor = log.actionType === 'increment' ? 'text-green-900' :
-                                       log.actionType === 'decrement' ? 'text-red-900' :
-                                       'text-blue-900';
+                      const isIncrement = log.actionType === 'increment';
+                      const isDecrement = log.actionType === 'decrement';
+                      const gradientClass = isIncrement ? 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20' :
+                                           isDecrement ? 'from-red-500/10 to-pink-500/10 border-red-500/20' :
+                                           'from-blue-500/10 to-purple-500/10 border-blue-500/20';
+                      const hoverGradient = isIncrement ? 'hover:from-emerald-500/20 hover:to-teal-500/20' :
+                                           isDecrement ? 'hover:from-red-500/20 hover:to-pink-500/20' :
+                                           'hover:from-blue-500/20 hover:to-purple-500/20';
+                      const textColor = isIncrement ? 'text-emerald-200' :
+                                       isDecrement ? 'text-red-200' :
+                                       'text-blue-200';
+                      const badgeColor = isIncrement ? 'bg-emerald-500/20 text-emerald-300' :
+                                        isDecrement ? 'bg-red-500/20 text-red-300' :
+                                        'bg-blue-500/20 text-blue-300';
                       
                       return (
-                        <div key={log.id} className={`border-l-4 pl-3 py-2 rounded-r ${bgColor}`}>
-                          <div className="flex justify-between items-center">
-                            <p className={`font-medium ${textColor}`}>
-                              {log.actionType === 'increment' ? 'Class Added' :
-                               log.actionType === 'decrement' ? 'Class Removed' :
-                               'Manual Action'}
-                            </p>
-                            <p className="text-xs text-gray-600">
+                        <div key={log.id} className={`bg-gradient-to-r ${gradientClass} border rounded-xl p-4 ${hoverGradient} transition-all duration-200`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${isIncrement ? 'bg-emerald-400' : isDecrement ? 'bg-red-400' : 'bg-blue-400'}`}></div>
+                              <p className={`font-semibold ${textColor}`}>
+                                {isIncrement ? 'Class Added' :
+                                 isDecrement ? 'Class Removed' :
+                                 'Manual Action'}
+                              </p>
+                            </div>
+                            <div className={`text-xs px-2 py-1 rounded-lg font-medium ${badgeColor}`}>
                               {formatDate(log.date)}
-                            </p>
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-600 mt-1">
-                            by {log.addedByName}
+                          <p className="text-white/60 text-sm mb-1">
+                            by <span className="text-white font-medium">{log.addedByName}</span>
                           </p>
                           {log.description && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-white/50 text-sm mt-2 italic">
                               {log.description}
                             </p>
                           )}
@@ -556,7 +648,13 @@ export default function TuitionDetailsPage() {
                       );
                     })
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No activity recorded yet</p>
+                    <div className="text-center py-12">
+                      <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-8 border border-blue-500/30">
+                        <Clock className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+                        <p className="text-white/60 text-lg">No activity recorded yet</p>
+                        <p className="text-white/40 text-sm mt-2">Activity will appear here as you manage classes</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -565,13 +663,20 @@ export default function TuitionDetailsPage() {
         </div>
       </div>
 
+      {/* Add Class Modal */}
       {showDateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Add Class</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in duration-200">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Plus className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Add New Class</h3>
+              <p className="text-white/60 text-sm">Record a new class session</p>
+            </div>
             
-            <div className="mb-4">
-              <label htmlFor="classDate" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-6">
+              <label htmlFor="classDate" className="block text-sm font-semibold text-white mb-3">
                 Class Date (optional)
               </label>
               <input
@@ -579,27 +684,28 @@ export default function TuitionDetailsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
                 placeholder="Select date"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-white/50 text-xs mt-2 flex items-center gap-2">
+                <div className="w-1 h-1 bg-white/50 rounded-full"></div>
                 Leave empty to use today&apos;s date
               </p>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowDateModal(false);
                   setSelectedDate('');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddClass}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 Add Class
               </button>
@@ -608,42 +714,50 @@ export default function TuitionDetailsPage() {
         </div>
       )}
 
+      {/* Add Student Modal */}
       {showStudentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Add Student to Tuition</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in duration-200">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Add Student</h3>
+              <p className="text-white/60 text-sm">Connect a student to this tuition</p>
+            </div>
             
-            <div className="mb-4">
-              <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                Student Email
+            <div className="mb-6">
+              <label htmlFor="studentEmail" className="block text-sm font-semibold text-white mb-3">
+                Student Email Address
               </label>
               <input
                 id="studentEmail"
                 type="email"
                 value={studentEmail}
                 onChange={(e) => setStudentEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200"
                 placeholder="student@example.com"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-white/50 text-xs mt-2 flex items-center gap-2">
+                <div className="w-1 h-1 bg-white/50 rounded-full"></div>
                 Enter the email address of an existing student account
               </p>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowStudentModal(false);
                   setStudentEmail('');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddStudent}
                 disabled={!studentEmail.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Add Student
               </button>
@@ -654,16 +768,18 @@ export default function TuitionDetailsPage() {
 
       {/* Delete Class Modal */}
       {showDeleteClassModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-700">Select Class to Delete</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-lg mx-4 animate-in zoom-in duration-200">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Minus className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Select Class to Delete</h3>
+              <p className="text-white/60 text-sm">Choose which class record to remove</p>
+            </div>
             
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                Choose which class attendance record to delete:
-              </p>
-              
-              <div className="max-h-60 overflow-y-auto space-y-2">
+            <div className="mb-6">
+              <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {availableClassLogs.length > 0 ? (
                   availableClassLogs.map((log) => {
                     const classDate = log.classDate || log.date;
@@ -671,14 +787,16 @@ export default function TuitionDetailsPage() {
                     
                     try {
                       if (classDate && typeof classDate === 'object' && 'seconds' in classDate) {
-                        dateStr = new Date((classDate as any).seconds * 1000).toLocaleDateString('en-US', {
+                        const timestamp = (classDate as { seconds: number }).seconds * 1000;
+                        dateStr = new Date(timestamp).toLocaleDateString('en-US', {
                           weekday: 'short',
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric'
                         });
                       } else if (classDate && typeof classDate === 'object' && 'toDate' in classDate) {
-                        dateStr = (classDate as any).toDate().toLocaleDateString('en-US', {
+                        const dateObj = (classDate as { toDate: () => Date }).toDate();
+                        dateStr = dateObj.toLocaleDateString('en-US', {
                           weekday: 'short',
                           year: 'numeric',
                           month: 'short',
@@ -699,7 +817,11 @@ export default function TuitionDetailsPage() {
                     return (
                       <label
                         key={log.id}
-                        className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                        className={`flex items-center p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                          selectedLogId === log.id
+                            ? 'bg-red-500/20 border-red-500/50 scale-105'
+                            : 'bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30'
+                        }`}
                       >
                         <input
                           type="radio"
@@ -707,35 +829,42 @@ export default function TuitionDetailsPage() {
                           value={log.id}
                           checked={selectedLogId === log.id}
                           onChange={(e) => setSelectedLogId(e.target.value)}
-                          className="mr-3"
+                          className="w-4 h-4 text-red-500 bg-transparent border-white/30 focus:ring-red-500/20 focus:ring-2"
                         />
-                        <div>
-                          <p className="font-medium">{dateStr}</p>
-                          <p className="text-xs text-gray-500">Added by {log.addedByName}</p>
+                        <div className="ml-3 flex-1">
+                          <p className="font-semibold text-white">{dateStr}</p>
+                          <p className="text-white/60 text-sm">Added by {log.addedByName}</p>
                         </div>
+                        {selectedLogId === log.id && (
+                          <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                        )}
                       </label>
                     );
                   })
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No class records found</p>
+                  <div className="text-center py-8">
+                    <div className="bg-white/5 rounded-xl p-6 border border-white/20">
+                      <p className="text-white/60">No class records found</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowDeleteClassModal(false);
                   setSelectedLogId('');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteClass}
                 disabled={!selectedLogId}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Delete Class
               </button>
@@ -746,48 +875,68 @@ export default function TuitionDetailsPage() {
 
       {/* Reset Confirmation Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-700">Reset Class Count</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-lg mx-4 animate-in zoom-in duration-200">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <RotateCcw className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Reset Class Count</h3>
+              <p className="text-white/60 text-sm">This action cannot be undone</p>
+            </div>
             
             <div className="mb-6">
-              <p className="text-gray-700 mb-4">
-                This will permanently delete all class records and reset the count to 0. This action cannot be undone.
+              <p className="text-white/80 mb-4 text-center">
+                This will permanently delete all class records and reset the count to 0.
               </p>
               
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-yellow-800 font-medium mb-2">⚠️ Warning:</p>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• All class attendance records will be permanently deleted</li>
-                  <li>• Class count will reset to 0</li>
-                  <li>• This cannot be undone</li>
+              <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl p-5 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-2xl">⚠️</div>
+                  <p className="text-amber-200 font-semibold">Critical Warning</p>
+                </div>
+                <ul className="text-amber-100 space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    All class attendance records will be permanently deleted
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    Class count will reset to 0
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    This action cannot be undone
+                  </li>
                 </ul>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="downloadPdf"
-                  checked={downloadBeforeReset}
-                  onChange={(e) => setDownloadBeforeReset(e.target.checked)}
-                  className="rounded"
-                />
-                <label htmlFor="downloadPdf" className="text-sm text-gray-700">
-                  Download PDF report before reset
+              <div className="bg-white/5 rounded-xl p-4 border border-white/20">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    id="downloadPdf"
+                    checked={downloadBeforeReset}
+                    onChange={(e) => setDownloadBeforeReset(e.target.checked)}
+                    className="w-4 h-4 text-blue-500 bg-transparent border-white/30 rounded focus:ring-blue-500/20 focus:ring-2"
+                  />
+                  <span className="text-white/80 text-sm group-hover:text-white transition-colors">
+                    Download PDF report before reset
+                  </span>
                 </label>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowResetModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReset}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 Reset & Delete All
               </button>
