@@ -132,8 +132,20 @@ export default function StudentDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
-          <p className="text-gray-600">Track your learning progress and upcoming classes</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+              <p className="text-gray-600">Track your learning progress and upcoming classes</p>
+            </div>
+            <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-600 font-medium">
+                {new Date().toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}

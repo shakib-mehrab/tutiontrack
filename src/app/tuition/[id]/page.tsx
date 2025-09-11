@@ -41,6 +41,13 @@ export default function TuitionDetailsPage() {
   const [success, setSuccess] = useState('');
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [studentEmail, setStudentEmail] = useState('');
+  const [showDeleteClassModal, setShowDeleteClassModal] = useState(false);
+  const [availableClassLogs, setAvailableClassLogs] = useState<ClassLog[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [downloadBeforeReset, setDownloadBeforeReset] = useState(true);
 
   const fetchTuitionDetails = useCallback(async () => {
     try {
@@ -72,6 +79,19 @@ export default function TuitionDetailsPage() {
 
   const handleClassUpdate = async (action: 'increment' | 'decrement' | 'reset', classDate?: string) => {
     try {
+      if (action === 'decrement') {
+        // Show modal to select which class to delete
+        await fetchClassLogsForDeletion();
+        setShowDeleteClassModal(true);
+        return;
+      }
+
+      if (action === 'reset') {
+        // Show reset confirmation modal
+        setShowResetModal(true);
+        return;
+      }
+
       const body: { action: string; classDate?: string } = { action };
       if (classDate) {
         body.classDate = classDate;
@@ -105,6 +125,125 @@ export default function TuitionDetailsPage() {
       handleClassUpdate('increment', selectedDate);
     } else {
       handleClassUpdate('increment');
+    }
+  };
+
+  const handleAddStudent = async () => {
+    if (!studentEmail.trim()) return;
+
+    try {
+      const response = await fetch(`/api/tuitions/${params.id}/student`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentEmail: studentEmail.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Student added successfully!');
+        setShowStudentModal(false);
+        setStudentEmail('');
+        await fetchTuitionDetails(); // Refresh details
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message || 'Failed to add student');
+      }
+    } catch (error) {
+      setError('Failed to add student');
+      console.error('Error adding student:', error);
+    }
+  };
+
+  const fetchClassLogsForDeletion = async () => {
+    try {
+      const response = await fetch(`/api/tuitions/${params.id}/logs`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Filter only increment logs (actual classes) and sort by date
+        const incrementLogs = data.logs
+          .filter((log: ClassLog) => log.actionType === 'increment')
+          .sort((a: ClassLog, b: ClassLog) => {
+            const dateA = a.classDate || a.date;
+            const dateB = b.classDate || b.date;
+            
+            // Convert to comparable timestamps
+            const timeA = dateA && typeof dateA === 'object' && 'seconds' in dateA 
+              ? dateA.seconds 
+              : new Date(dateA as string | Date).getTime() / 1000;
+            const timeB = dateB && typeof dateB === 'object' && 'seconds' in dateB 
+              ? dateB.seconds 
+              : new Date(dateB as string | Date).getTime() / 1000;
+            
+            return timeB - timeA; // Most recent first
+          });
+        
+        setAvailableClassLogs(incrementLogs);
+      }
+    } catch (error) {
+      console.error('Error fetching class logs:', error);
+      setError('Failed to load class logs');
+    }
+  };
+
+  const handleDeleteClass = async () => {
+    if (!selectedLogId) return;
+
+    try {
+      const url = `/api/tuitions/${params.id}/delete-class?logId=${selectedLogId}`;
+      console.log('Making DELETE request to:', url);
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+      });
+
+      console.log('Response status:', response.status);
+
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (data.success) {
+        setSuccess('Class deleted successfully');
+        setShowDeleteClassModal(false);
+        setSelectedLogId('');
+        await fetchTuitionDetails(); // Refresh the details
+        setTimeout(() => setSuccess(''), 2000);
+      } else {
+        setError(data.message || 'Failed to delete class');
+      }
+    } catch (error) {
+      setError('Failed to delete class');
+      console.error('Error deleting class:', error);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      // Download PDF before reset if requested
+      if (downloadBeforeReset && details) {
+        handleExportPDF();
+      }
+
+      const response = await fetch(`/api/tuitions/${params.id}/classes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Class count reset successfully! All class records have been cleared.');
+        setShowResetModal(false);
+        await fetchTuitionDetails(); // Refresh the details
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message || 'Failed to reset class count');
+      }
+    } catch (error) {
+      setError('Failed to reset class count');
+      console.error('Error resetting classes:', error);
     }
   };
 
@@ -253,7 +392,7 @@ export default function TuitionDetailsPage() {
                   </div>
                 </div>
 
-                {tuition.studentName && (
+                {tuition.studentName ? (
                   <div className="flex items-center">
                     <User className="h-4 w-4 text-gray-400 mr-3" />
                     <div>
@@ -263,6 +402,22 @@ export default function TuitionDetailsPage() {
                         <p className="text-sm text-gray-500">{tuition.studentEmail}</p>
                       )}
                     </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 text-yellow-600 mr-3" />
+                      <div>
+                        <p className="text-sm text-yellow-800 font-medium">No Student Assigned</p>
+                        <p className="text-xs text-yellow-600">Add a student to this tuition</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowStudentModal(true)}
+                      className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
+                    >
+                      Add Student
+                    </button>
                   </div>
                 )}
 
@@ -442,6 +597,194 @@ export default function TuitionDetailsPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Add Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add Student to Tuition</h3>
+            
+            <div className="mb-4">
+              <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Student Email
+              </label>
+              <input
+                id="studentEmail"
+                type="email"
+                value={studentEmail}
+                onChange={(e) => setStudentEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="student@example.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the email address of an existing student account
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowStudentModal(false);
+                  setStudentEmail('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={!studentEmail.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Class Modal */}
+      {showDeleteClassModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-red-700">Select Class to Delete</h3>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                Choose which class attendance record to delete:
+              </p>
+              
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {availableClassLogs.length > 0 ? (
+                  availableClassLogs.map((log) => {
+                    const classDate = log.classDate || log.date;
+                    let dateStr = 'Unknown Date';
+                    
+                    try {
+                      if (classDate && typeof classDate === 'object' && 'seconds' in classDate) {
+                        dateStr = new Date((classDate as any).seconds * 1000).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } else if (classDate && typeof classDate === 'object' && 'toDate' in classDate) {
+                        dateStr = (classDate as any).toDate().toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } else {
+                        dateStr = new Date(classDate as string | Date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      }
+                    } catch {
+                      dateStr = 'Invalid Date';
+                    }
+                    
+                    return (
+                      <label
+                        key={log.id}
+                        className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                      >
+                        <input
+                          type="radio"
+                          name="classLog"
+                          value={log.id}
+                          checked={selectedLogId === log.id}
+                          onChange={(e) => setSelectedLogId(e.target.value)}
+                          className="mr-3"
+                        />
+                        <div>
+                          <p className="font-medium">{dateStr}</p>
+                          <p className="text-xs text-gray-500">Added by {log.addedByName}</p>
+                        </div>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No class records found</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteClassModal(false);
+                  setSelectedLogId('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteClass}
+                disabled={!selectedLogId}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-red-700">Reset Class Count</h3>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                This will permanently delete all class records and reset the count to 0. This action cannot be undone.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-yellow-800 font-medium mb-2">⚠️ Warning:</p>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  <li>• All class attendance records will be permanently deleted</li>
+                  <li>• Class count will reset to 0</li>
+                  <li>• This cannot be undone</li>
+                </ul>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="downloadPdf"
+                  checked={downloadBeforeReset}
+                  onChange={(e) => setDownloadBeforeReset(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="downloadPdf" className="text-sm text-gray-700">
+                  Download PDF report before reset
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Reset & Delete All
               </button>
             </div>
           </div>

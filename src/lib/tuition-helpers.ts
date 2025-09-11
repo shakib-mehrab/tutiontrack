@@ -179,6 +179,15 @@ export async function resetClassCount(tuitionId: string, userId: string, userNam
   try {
     const tuitionRef = doc(db, 'tuitions', tuitionId);
     
+    // Delete all class logs for this tuition
+    const logsRef = collection(db, 'classLogs');
+    const q = query(logsRef, where('tuitionId', '==', tuitionId));
+    const querySnapshot = await getDocs(q);
+    
+    // Delete each log
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
     // Update to new month/year and reset count
     const currentDate = new Date();
     const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
@@ -189,16 +198,7 @@ export async function resetClassCount(tuitionId: string, userId: string, userNam
       updatedAt: Timestamp.fromDate(new Date()),
     });
 
-    // Log the reset
-    await addClassLog({
-      tuitionId,
-      actionType: 'manual',
-      addedBy: userId,
-      addedByName: userName,
-      description: 'Monthly reset',
-    });
-
-    return { success: true, message: 'Class count reset successfully' };
+    return { success: true, message: `Class count reset successfully. Deleted ${querySnapshot.size} class records.` };
   } catch (error) {
     console.error('Error resetting class count:', error);
     return { success: false, message: 'Failed to reset class count' };

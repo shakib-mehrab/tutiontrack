@@ -43,6 +43,8 @@ export default function TeacherDashboard() {
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedTuitionId, setSelectedTuitionId] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [showStudentModal, setShowStudentModal] = useState(false);
+  const [studentEmail, setStudentEmail] = useState('');
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -150,6 +152,39 @@ export default function TeacherDashboard() {
     } else {
       handleClassUpdate(selectedTuitionId, 'increment');
     }
+  };
+
+  const handleAddStudent = async () => {
+    if (!studentEmail.trim()) return;
+
+    try {
+      const response = await fetch(`/api/tuitions/${selectedTuitionId}/student`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentEmail: studentEmail.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Student added successfully!');
+        setShowStudentModal(false);
+        setStudentEmail('');
+        setSelectedTuitionId('');
+        await fetchTuitions(); // Refresh tuitions
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message || 'Failed to add student');
+      }
+    } catch (error) {
+      setError('Failed to add student');
+      console.error('Error adding student:', error);
+    }
+  };
+
+  const handleAddStudentToTuition = (tuitionId: string) => {
+    setSelectedTuitionId(tuitionId);
+    setShowStudentModal(true);
   };
 
   const calculateProgress = (takenClasses: number, plannedClasses: number) => {
@@ -279,10 +314,22 @@ export default function TeacherDashboard() {
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  Manage your tuitions and track student progress
-                </p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Manage your tuitions and track student progress
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-600 font-medium">
+                      {new Date().toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -386,9 +433,26 @@ export default function TeacherDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1 cursor-pointer" onClick={() => router.push(`/tuition/${tuition.id}`)}>
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                              {tuition.subject}{tuition.studentName ? ` - ${tuition.studentName}` : ' (No student assigned)'}
-                            </h3>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                                {tuition.subject}{tuition.studentName ? ` - ${tuition.studentName}` : ''}
+                              </h3>
+                              {!tuition.studentName && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddStudentToTuition(tuition.id);
+                                  }}
+                                  className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700 transition-colors"
+                                  title="Add student to this tuition"
+                                >
+                                  Add Student
+                                </button>
+                              )}
+                            </div>
+                            {!tuition.studentName && (
+                              <p className="text-sm text-yellow-600 mb-2">No student assigned</p>
+                            )}
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={(e) => {
@@ -531,6 +595,52 @@ export default function TeacherDashboard() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Add Class
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Modal */}
+      {showStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add Student to Tuition</h3>
+            
+            <div className="mb-4">
+              <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Student Email
+              </label>
+              <input
+                id="studentEmail"
+                type="email"
+                value={studentEmail}
+                onChange={(e) => setStudentEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="student@example.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter the email address of an existing student account
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowStudentModal(false);
+                  setStudentEmail('');
+                  setSelectedTuitionId('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={!studentEmail.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add Student
               </button>
             </div>
           </div>
