@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Tuition } from '@/types';
-import { downloadTuitionPDF } from '@/lib/pdf-generator';
 
 export default function StudentDashboard() {
   const { data: session, status } = useSession();
@@ -51,7 +50,7 @@ export default function StudentDashboard() {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: '/auth/signin' });
   };
 
   const calculateProgress = (tuition: Tuition) => {
@@ -60,6 +59,9 @@ export default function StudentDashboard() {
 
   const handleExportPDF = async (tuition: Tuition) => {
     try {
+      // Dynamically import PDF generator only when needed
+      const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+      
       // Fetch class logs for this tuition
       const response = await fetch(`/api/tuitions/${tuition.id}/logs`);
       const data = await response.json();
@@ -80,19 +82,29 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      // Fallback: export basic info
-      downloadTuitionPDF({
-        tuition,
-        logs: [],
-        month: tuition.currentMonthYear,
-      });
+      // Fallback: try basic export
+      try {
+        const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+        downloadTuitionPDF({
+          tuition,
+          logs: [],
+          month: tuition.currentMonthYear,
+        });
+      } catch (e) {
+        console.error('Failed to load PDF generator:', e);
+      }
     }
   };
 
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }

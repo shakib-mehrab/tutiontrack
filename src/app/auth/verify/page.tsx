@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, XCircle, Mail, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Mail, RefreshCw, BookOpen } from 'lucide-react';
 
 function OTPVerificationContent() {
   const [status, setStatus] = useState<'form' | 'success' | 'error'>('form');
@@ -262,7 +262,9 @@ export default function VerifyOTP() {
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="bg-green-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>

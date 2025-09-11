@@ -201,7 +201,9 @@ export default function SignIn() {
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>

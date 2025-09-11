@@ -23,7 +23,12 @@ export default function Home() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }

@@ -19,7 +19,6 @@ import {
 import { ProgressBar } from '@/components/ProgressBar';
 import { AddTuitionModal } from '@/components/AddTuitionModal';
 import { Tuition } from '@/types';
-import { downloadTuitionPDF } from '@/lib/pdf-generator';
 
 interface TuitionFormData {
   studentEmail?: string;
@@ -199,6 +198,9 @@ export default function TeacherDashboard() {
 
   const handleExportPDF = async (tuition: Tuition) => {
     try {
+      // Dynamically import PDF generator only when needed
+      const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+      
       // Fetch class logs for this tuition
       const response = await fetch(`/api/tuitions/${tuition.id}/logs`);
       const data = await response.json();
@@ -219,19 +221,29 @@ export default function TeacherDashboard() {
       }
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      // Fallback: export basic info
-      downloadTuitionPDF({
-        tuition,
-        logs: [],
-        month: tuition.currentMonthYear,
-      });
+      // Fallback: try basic export
+      try {
+        const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+        downloadTuitionPDF({
+          tuition,
+          logs: [],
+          month: tuition.currentMonthYear,
+        });
+      } catch (e) {
+        console.error('Failed to load PDF generator:', e);
+      }
     }
   };
 
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -297,7 +309,7 @@ export default function TeacherDashboard() {
           {/* Logout */}
           <div className="px-6 py-4 border-t">
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
               className="w-full flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
             >
               <LogOut className="h-4 w-4 mr-3" />

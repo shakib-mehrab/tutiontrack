@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { Tuition, ClassLog } from '@/types';
 import { ProgressBar } from '@/components/ProgressBar';
-import { downloadTuitionPDF } from '@/lib/pdf-generator';
 
 interface TuitionDetails {
   tuition: Tuition;
@@ -278,14 +277,21 @@ export default function TuitionDetailsPage() {
     });
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!details) return;
     
-    downloadTuitionPDF({
-      tuition: details.tuition,
-      logs: details.logs,
-      month: details.tuition.currentMonthYear,
-    });
+    try {
+      // Dynamically import PDF generator only when needed
+      const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+      
+      downloadTuitionPDF({
+        tuition: details.tuition,
+        logs: details.logs,
+        month: details.tuition.currentMonthYear,
+      });
+    } catch (error) {
+      console.error('Failed to load PDF generator:', error);
+    }
   };
 
   const calculateProgress = (takenClasses: number, plannedClasses: number) => {
@@ -301,7 +307,12 @@ export default function TuitionDetailsPage() {
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-gray-600">Loading tuition details...</p>
+        </div>
       </div>
     );
   }
