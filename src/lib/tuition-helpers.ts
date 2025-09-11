@@ -13,6 +13,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { Tuition, ClassLog, User } from '@/types';
 
 export async function createTuition(tuitionData: Omit<Tuition, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; message: string; tuitionId?: string }> {
@@ -75,17 +76,34 @@ export async function updateClassCount(
   action: 'increment' | 'decrement', 
   userId: string, 
   userName: string,
-  classDate?: Date // Optional: specify the actual class date
+  classDate?: Date, // Optional: specify the actual class date
+  isServerSide?: boolean // Flag to determine which Firebase SDK to use
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const tuitionRef = doc(db, 'tuitions', tuitionId);
-    const tuitionDoc = await getDoc(tuitionRef);
-    
-    if (!tuitionDoc.exists()) {
-      return { success: false, message: 'Tuition not found' };
+    let tuitionDoc: any;
+    let tuition: Tuition;
+
+    if (isServerSide) {
+      // Use Firebase Admin SDK for server-side operations
+      const adminDb = getAdminDb();
+      const tuitionRef = adminDb.collection('tuitions').doc(tuitionId);
+      tuitionDoc = await tuitionRef.get();
+      
+      if (!tuitionDoc.exists) {
+        return { success: false, message: 'Tuition not found' };
+      }
+      tuition = tuitionDoc.data() as Tuition;
+    } else {
+      // Use client-side Firebase SDK
+      const tuitionRef = doc(db, 'tuitions', tuitionId);
+      tuitionDoc = await getDoc(tuitionRef);
+      
+      if (!tuitionDoc.exists()) {
+        return { success: false, message: 'Tuition not found' };
+      }
+      tuition = tuitionDoc.data() as Tuition;
     }
 
-    const tuition = tuitionDoc.data() as Tuition;
     let newCount = tuition.takenClasses;
 
     if (action === 'increment') {
@@ -97,25 +115,44 @@ export async function updateClassCount(
     }
 
     // Update tuition
-    await updateDoc(tuitionRef, {
-      takenClasses: newCount,
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
-
-    // Log the action with class date
-    const logData: Omit<ClassLog, 'id' | 'date' | 'createdAt'> = {
-      tuitionId,
-      actionType: action,
-      addedBy: userId,
-      addedByName: userName,
-    };
-
-    // For increment actions, store the actual class date
-    if (action === 'increment') {
-      logData.classDate = Timestamp.fromDate(classDate || new Date());
+    if (isServerSide) {
+      const adminDb = getAdminDb();
+      const tuitionRef = adminDb.collection('tuitions').doc(tuitionId);
+      await tuitionRef.update({
+        takenClasses: newCount,
+        updatedAt: new Date(),
+      });
+    } else {
+      const tuitionRef = doc(db, 'tuitions', tuitionId);
+      await updateDoc(tuitionRef, {
+        takenClasses: newCount,
+        updatedAt: Timestamp.fromDate(new Date()),
+      });
     }
 
-    await addClassLog(logData);
+    // Log the action with class date
+    if (isServerSide) {
+      const adminDb = getAdminDb();
+      const logData = {
+        tuitionId,
+        actionType: action,
+        addedBy: userId,
+        addedByName: userName,
+        date: new Date(),
+        createdAt: new Date(),
+        ...(action === 'increment' && { classDate: classDate || new Date() })
+      };
+      await adminDb.collection('classLogs').add(logData);
+    } else {
+      const logData: Omit<ClassLog, 'id' | 'date' | 'createdAt'> = {
+        tuitionId,
+        actionType: action,
+        addedBy: userId,
+        addedByName: userName,
+        ...(action === 'increment' && { classDate: Timestamp.fromDate(classDate || new Date()) })
+      };
+      await addClassLog(logData, false);
+    }
 
     return { success: true, message: `Class count ${action}ed successfully` };
   } catch (error) {
@@ -124,14 +161,25 @@ export async function updateClassCount(
   }
 }
 
-export async function addClassLog(logData: Omit<ClassLog, 'id' | 'date' | 'createdAt'>): Promise<void> {
+export async function addClassLog(logData: Omit<ClassLog, 'id' | 'date' | 'createdAt'>, isServerSide?: boolean): Promise<void> {
   try {
-    const logsRef = collection(db, 'classLogs');
-    await addDoc(logsRef, {
-      ...logData,
-      date: Timestamp.fromDate(new Date()),
-      createdAt: Timestamp.fromDate(new Date()),
-    });
+    if (isServerSide) {
+      // Use Firebase Admin SDK
+      const adminDb = getAdminDb();
+      await adminDb.collection('classLogs').add({
+        ...logData,
+        date: new Date(),
+        createdAt: new Date(),
+      });
+    } else {
+      // Use client-side Firebase SDK
+      const logsRef = collection(db, 'classLogs');
+      await addDoc(logsRef, {
+        ...logData,
+        date: Timestamp.fromDate(new Date()),
+        createdAt: Timestamp.fromDate(new Date()),
+      });
+    }
   } catch (error) {
     console.error('Error adding class log:', error);
     throw error;
@@ -175,30 +223,59 @@ export async function getClassDates(tuitionId: string): Promise<ClassLog[]> {
   }
 }
 
-export async function resetClassCount(tuitionId: string): Promise<{ success: boolean; message: string }> {
+export async function resetClassCount(tuitionId: string, isServerSide?: boolean): Promise<{ success: boolean; message: string }> {
   try {
-    const tuitionRef = doc(db, 'tuitions', tuitionId);
-    
-    // Delete all class logs for this tuition
-    const logsRef = collection(db, 'classLogs');
-    const q = query(logsRef, where('tuitionId', '==', tuitionId));
-    const querySnapshot = await getDocs(q);
-    
-    // Delete each log
-    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-    
-    // Update to new month/year and reset count
-    const currentDate = new Date();
-    const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-    
-    await updateDoc(tuitionRef, {
-      takenClasses: 0,
-      currentMonthYear,
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
+    if (isServerSide) {
+      // Use Firebase Admin SDK
+      const adminDb = getAdminDb();
+      const tuitionRef = adminDb.collection('tuitions').doc(tuitionId);
+      
+      // Delete all class logs for this tuition
+      const logsSnapshot = await adminDb.collection('classLogs').where('tuitionId', '==', tuitionId).get();
+      
+      // Delete each log
+      const batch = adminDb.batch();
+      logsSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      
+      // Update to new month/year and reset count
+      const currentDate = new Date();
+      const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      await tuitionRef.update({
+        takenClasses: 0,
+        currentMonthYear,
+        updatedAt: currentDate,
+      });
 
-    return { success: true, message: `Class count reset successfully. Deleted ${querySnapshot.size} class records.` };
+      return { success: true, message: `Class count reset successfully. Deleted ${logsSnapshot.size} class records.` };
+    } else {
+      // Use client-side Firebase SDK
+      const tuitionRef = doc(db, 'tuitions', tuitionId);
+      
+      // Delete all class logs for this tuition
+      const logsRef = collection(db, 'classLogs');
+      const q = query(logsRef, where('tuitionId', '==', tuitionId));
+      const querySnapshot = await getDocs(q);
+      
+      // Delete each log
+      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      
+      // Update to new month/year and reset count
+      const currentDate = new Date();
+      const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      await updateDoc(tuitionRef, {
+        takenClasses: 0,
+        currentMonthYear,
+        updatedAt: Timestamp.fromDate(new Date()),
+      });
+
+      return { success: true, message: `Class count reset successfully. Deleted ${querySnapshot.size} class records.` };
+    }
   } catch (error) {
     console.error('Error resetting class count:', error);
     return { success: false, message: 'Failed to reset class count' };

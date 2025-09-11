@@ -7,6 +7,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
+      console.error('Unauthorized access attempt to class count API');
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
@@ -17,7 +18,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const { action, classDate } = body;
 
+    console.log('Class count API called:', {
+      tuitionId: resolvedParams.id,
+      action,
+      classDate,
+      userId: session.user.id,
+      userName: session.user.name
+    });
+
     if (!['increment', 'decrement', 'reset'].includes(action)) {
+      console.error('Invalid action provided:', action);
       return NextResponse.json(
         { success: false, message: 'Invalid action' },
         { status: 400 }
@@ -26,12 +36,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     let result;
     if (action === 'reset') {
-      result = await resetClassCount(resolvedParams.id);
+      console.log('Resetting class count for tuition:', resolvedParams.id);
+      result = await resetClassCount(resolvedParams.id, true); // true = server-side
     } else {
       const date = classDate ? new Date(classDate) : undefined;
-      result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!, date);
+      console.log('Updating class count:', { action, date });
+      result = await updateClassCount(resolvedParams.id, action, session.user.id, session.user.name!, date, true); // true = server-side
     }
 
+    console.log('Class count operation result:', result);
     return NextResponse.json(result, {
       status: result.success ? 200 : 400,
     });
