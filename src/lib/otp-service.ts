@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 // Generate a 6-digit OTP
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -10,52 +12,58 @@ export function getOTPExpiry(): Date {
   return expiry;
 }
 
-// For development: Log OTP to console instead of sending email
-export async function sendOTPConsole(
-  email: string,
-  name: string,
-  otp: string
-): Promise<{ success: boolean; message: string }> {
-  try {
-    console.log('='.repeat(50));
-    console.log('📱 OTP VERIFICATION');
-    console.log('='.repeat(50));
-    console.log(`👤 Name: ${name}`);
-    console.log(`📧 Email: ${email}`);
-    console.log(`🔢 OTP Code: ${otp}`);
-    console.log(`⏰ Valid for: 10 minutes`);
-    console.log('='.repeat(50));
-    console.log('Copy the OTP code above to verify your account');
-    console.log('='.repeat(50));
-
-    return { success: true, message: 'OTP generated and logged to console' };
-  } catch (error) {
-    console.error('OTP console log error:', error);
-    return { success: false, message: 'Failed to generate OTP' };
-  }
-}
 
 // Optional: SMS service integration (can be added later)
-export async function sendOTPSMS(
-  phoneNumber: string,
-  name: string,
-  otp: string
-): Promise<{ success: boolean; message: string }> {
+export async function sendOTPSMS(): Promise<{ success: boolean; message: string }> {
   // TODO: Integrate with SMS service like Twilio, AWS SNS, etc.
-  console.log(`SMS OTP to ${phoneNumber}: ${otp}`);
-  return { success: true, message: 'OTP sent via SMS (mock)' };
+  throw new Error('SMS service not implemented yet');
 }
 
-// Email-based OTP (free alternative to complex email templates)
+// Email-based OTP (production-ready SMTP delivery)
 export async function sendOTPEmail(
   email: string,
   name: string,
   otp: string
 ): Promise<{ success: boolean; message: string }> {
-  // For now, just use console logging
-  // In production, you can integrate with free email services or simple SMTP
-  return await sendOTPConsole(email, name, otp);
+  try {
+    // Check if SMTP credentials are configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      throw new Error('SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS environment variables.');
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.FROM_EMAIL || process.env.SMTP_USER,
+      to: email,
+      subject: 'Your TuitionTrack OTP Code',
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>OTP Verification</h2>
+          <p>Hello ${name},</p>
+          <p>Your OTP code is:</p>
+          <h1 style="letter-spacing: 2px;">${otp}</h1>
+          <p>This code is valid for 10 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return { success: true, message: 'OTP sent via email' };
+  } catch (error) {
+    console.error('OTP email error:', error);
+    return { success: false, message: 'Failed to send OTP email' };
+  }
 }
+
+
 
 // Verify OTP against database
 export function verifyOTPCode(providedOTP: string, storedOTP: string): boolean {
