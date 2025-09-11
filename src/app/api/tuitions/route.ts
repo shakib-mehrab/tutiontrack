@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { studentEmail, subject, startTime, endTime, daysPerWeek, plannedClassesPerMonth } = body;
+    const { studentEmail, studentName, subject, startTime, endTime, daysPerWeek, plannedClassesPerMonth } = body;
 
     if (!subject || !startTime || !endTime || !daysPerWeek || !plannedClassesPerMonth) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       teacherId: session.user.id,
       teacherName: session.user.name!,
       studentId: student?.uid || null,
-      studentName: student?.name || null,
+      studentName: student?.name || studentName || null,
       studentEmail: student?.email || null,
       subject,
       startTime,

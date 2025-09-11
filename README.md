@@ -298,3 +298,9 @@ For support and questions, please create an issue in the repository or contact t
 ---
 
 Built with ❤️ using Next.js and Firebase
+
+
+-reset count dile sob reset hoite hobe 
+- Class remove e option dekhaite hobe ze kon class remove korbo 
+- pdf theke activity log baddite hobe, format korte hobe 
+- 

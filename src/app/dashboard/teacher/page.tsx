@@ -23,6 +23,7 @@ import { downloadTuitionPDF } from '@/lib/pdf-generator';
 
 interface TuitionFormData {
   studentEmail?: string;
+  studentName?: string;
   subject: string;
   startTime: string;
   endTime: string;

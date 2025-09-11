@@ -8,6 +8,7 @@ interface AddTuitionModalProps {
   onClose: () => void;
   onSubmit: (data: {
     studentEmail?: string;
+    studentName?: string;
     subject: string;
     startTime: string;
     endTime: string;
@@ -20,6 +21,7 @@ interface AddTuitionModalProps {
 export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }: AddTuitionModalProps) {
   const [formData, setFormData] = useState({
     studentEmail: '',
+    studentName: '',
     subject: '',
     startTime: '',
     endTime: '',
@@ -49,14 +51,15 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
       return;
     }
 
-    // Only include studentEmail if it's provided
+    // Only include optional fields if they're provided
     const submitData = {
       subject: formData.subject,
       startTime: formData.startTime,
       endTime: formData.endTime,
       daysPerWeek: formData.daysPerWeek,
       plannedClassesPerMonth: formData.plannedClassesPerMonth,
-      ...(formData.studentEmail && { studentEmail: formData.studentEmail })
+      ...(formData.studentEmail && { studentEmail: formData.studentEmail }),
+      ...(formData.studentName && { studentName: formData.studentName })
     };
     
     onSubmit(submitData);
@@ -65,6 +68,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
   const handleClose = () => {
     setFormData({
       studentEmail: '',
+      studentName: '',
       subject: '',
       startTime: '',
       endTime: '',
@@ -100,6 +104,22 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
           )}
 
           <div className="space-y-4">
+            <div>
+              <label htmlFor="studentName" className="block text-sm font-medium text-gray-700 mb-1">
+                Student Name
+              </label>
+              <input
+                id="studentName"
+                type="text"
+                value={formData.studentName}
+                onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter student's full name (optional)"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">Optional: Student&apos;s name for record keeping</p>
+            </div>
+
             <div>
               <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-1">
                 Student Email
