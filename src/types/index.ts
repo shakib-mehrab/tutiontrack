@@ -7,6 +7,11 @@ export interface User {
   name: string;
   createdAt: Timestamp | Date;
   emailVerified: boolean;
+  // OTP fields
+  otpCode?: string;
+  otpExpiry?: Timestamp | Date;
+  otpAttempts?: number; // Track failed attempts
+  // Legacy email verification fields (for migration)
   verificationToken?: string;
   verificationTokenExpiry?: Timestamp | Date;
   linkedTuitions?: string[]; // Array of tuition IDs

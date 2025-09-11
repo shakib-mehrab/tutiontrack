@@ -56,9 +56,9 @@ export default function Register() {
       const result = await response.json();
 
       if (result.success) {
-        setSuccess('Registration successful! Please check your email for verification.');
+        setSuccess('Registration successful! Please check the console for your OTP code.');
         setTimeout(() => {
-          router.push('/auth/signin');
+          router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
         }, 3000);
       } else {
         setError(result.message);

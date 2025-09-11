@@ -1,11 +1,15 @@
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { User } from '@/types';
 import { 
-  sendVerificationEmail, 
-  sendWelcomeEmail, 
-  generateVerificationToken, 
-  getTokenExpiry 
+  sendWelcomeEmail
 } from '@/lib/email-service';
+import {
+  generateOTP,
+  getOTPExpiry,
+  sendOTPEmail,
+  verifyOTPCode,
+  isOTPExpired
+} from '@/lib/otp-service';
 
 export interface RegisterUserData {
   email: string;
@@ -32,9 +36,9 @@ export async function registerUser(userData: RegisterUserData): Promise<{ succes
       emailVerified: false,
     });
 
-    // Generate verification token
-    const verificationToken = generateVerificationToken();
-    const verificationTokenExpiry = getTokenExpiry();
+    // Generate OTP
+    const otpCode = generateOTP();
+    const otpExpiry = getOTPExpiry();
 
     // Create user document in Firestore using Admin SDK
     const newUser: User = {
@@ -44,24 +48,25 @@ export async function registerUser(userData: RegisterUserData): Promise<{ succes
       name: userData.name,
       createdAt: new Date(),
       emailVerified: false,
-      verificationToken,
-      verificationTokenExpiry,
+      otpCode,
+      otpExpiry,
+      otpAttempts: 0,
       linkedTuitions: [],
     };
 
     await adminDb.collection('users').doc(userRecord.uid).set(newUser);
 
-    // Send verification email
-    const emailResult = await sendVerificationEmail(userData.email, userData.name, verificationToken);
+    // Send OTP
+    const otpResult = await sendOTPEmail(userData.email, userData.name, otpCode);
     
-    if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.message);
-      // Don't fail registration if email fails, but log it
+    if (!otpResult.success) {
+      console.error('Failed to send OTP:', otpResult.message);
+      // Don't fail registration if OTP sending fails, but log it
     }
 
     return { 
       success: true, 
-      message: 'User registered successfully. Please check your email for verification.', 
+      message: 'User registered successfully. Please check the console for your OTP code to verify your account.', 
       uid: userRecord.uid 
     };
   } catch (error: unknown) {
@@ -99,44 +104,71 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   }
 }
 
-export async function verifyUserEmail(token: string): Promise<{ success: boolean; message: string }> {
+export async function verifyUserOTP(email: string, otpCode: string): Promise<{ success: boolean; message: string }> {
   try {
-    // Find user by verification token
+    // Find user by email
     const usersRef = adminDb.collection('users');
-    const querySnapshot = await usersRef.where('verificationToken', '==', token).get();
+    const querySnapshot = await usersRef.where('email', '==', email).get();
     
     if (querySnapshot.empty) {
-      return { success: false, message: 'Invalid verification token' };
+      return { success: false, message: 'User not found' };
     }
 
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data() as User;
-
-    // Check if token has expired
-    const now = new Date();
-    const tokenExpiry = userData.verificationTokenExpiry;
-    
-    if (tokenExpiry && tokenExpiry instanceof Date && tokenExpiry < now) {
-      return { success: false, message: 'Verification token has expired. Please request a new one.' };
-    }
-
-    if (tokenExpiry && 'toDate' in tokenExpiry && typeof tokenExpiry.toDate === 'function') {
-      const expiryDate = tokenExpiry.toDate();
-      if (expiryDate < now) {
-        return { success: false, message: 'Verification token has expired. Please request a new one.' };
-      }
-    }
 
     // Check if already verified
     if (userData.emailVerified) {
       return { success: false, message: 'Email is already verified' };
     }
 
-    // Update user to verified status and remove verification token
+    // Check if OTP exists
+    if (!userData.otpCode) {
+      return { success: false, message: 'No OTP found. Please request a new one.' };
+    }
+
+    // Check OTP attempts (limit to 5 attempts)
+    const maxAttempts = 5;
+    const currentAttempts = userData.otpAttempts || 0;
+    
+    if (currentAttempts >= maxAttempts) {
+      return { success: false, message: 'Too many failed attempts. Please request a new OTP.' };
+    }
+
+    // Check if OTP has expired
+    const otpExpiry = userData.otpExpiry;
+    
+    if (otpExpiry && otpExpiry instanceof Date && isOTPExpired(otpExpiry)) {
+      return { success: false, message: 'OTP has expired. Please request a new one.' };
+    }
+
+    if (otpExpiry && 'toDate' in otpExpiry && typeof otpExpiry.toDate === 'function') {
+      const expiryDate = otpExpiry.toDate();
+      if (isOTPExpired(expiryDate)) {
+        return { success: false, message: 'OTP has expired. Please request a new one.' };
+      }
+    }
+
+    // Verify OTP
+    if (!verifyOTPCode(otpCode, userData.otpCode)) {
+      // Increment failed attempts
+      await userDoc.ref.update({
+        otpAttempts: currentAttempts + 1,
+      });
+      
+      const remainingAttempts = maxAttempts - (currentAttempts + 1);
+      return { 
+        success: false, 
+        message: `Invalid OTP code. ${remainingAttempts} attempts remaining.` 
+      };
+    }
+
+    // OTP is valid - verify the user
     await userDoc.ref.update({
       emailVerified: true,
-      verificationToken: null,
-      verificationTokenExpiry: null,
+      otpCode: null,
+      otpExpiry: null,
+      otpAttempts: null,
     });
 
     // Update Firebase Auth user
@@ -154,12 +186,12 @@ export async function verifyUserEmail(token: string): Promise<{ success: boolean
 
     return { success: true, message: 'Email verified successfully!' };
   } catch (error) {
-    console.error('Email verification error:', error);
-    return { success: false, message: 'Failed to verify email' };
+    console.error('OTP verification error:', error);
+    return { success: false, message: 'Failed to verify OTP' };
   }
 }
 
-export async function resendVerificationEmail(email: string): Promise<{ success: boolean; message: string }> {
+export async function resendOTP(email: string): Promise<{ success: boolean; message: string }> {
   try {
     const user = await getUserByEmail(email);
     
@@ -171,22 +203,23 @@ export async function resendVerificationEmail(email: string): Promise<{ success:
       return { success: false, message: 'Email is already verified' };
     }
 
-    // Generate new verification token
-    const verificationToken = generateVerificationToken();
-    const verificationTokenExpiry = getTokenExpiry();
+    // Generate new OTP
+    const otpCode = generateOTP();
+    const otpExpiry = getOTPExpiry();
 
-    // Update user with new token
+    // Reset attempts and update user with new OTP
     await adminDb.collection('users').doc(user.uid).update({
-      verificationToken,
-      verificationTokenExpiry,
+      otpCode,
+      otpExpiry,
+      otpAttempts: 0,
     });
 
-    // Send verification email
-    const emailResult = await sendVerificationEmail(user.email, user.name, verificationToken);
+    // Send OTP
+    const otpResult = await sendOTPEmail(user.email, user.name, otpCode);
     
-    return emailResult;
+    return otpResult;
   } catch (error) {
-    console.error('Resend verification email error:', error);
-    return { success: false, message: 'Failed to resend verification email' };
+    console.error('Resend OTP error:', error);
+    return { success: false, message: 'Failed to resend OTP' };
   }
 }

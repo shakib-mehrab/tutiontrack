@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyUserEmail } from '@/lib/auth-helpers';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
-    if (!token) {
+    // Legacy token-based verification is no longer supported
+    if (token) {
       return NextResponse.json(
-        { success: false, message: 'Verification token is required' },
+        { success: false, message: 'Token-based verification is deprecated. Please use OTP verification instead.' },
         { status: 400 }
       );
     }
 
-    const result = await verifyUserEmail(token);
-
-    return NextResponse.json(result, {
-      status: result.success ? 200 : 400,
-    });
+    return NextResponse.json(
+      { success: false, message: 'Please use OTP verification instead.' },
+      { status: 400 }
+    );
   } catch (error) {
-    console.error('Email verification API error:', error);
+    console.error('Verification API error:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
