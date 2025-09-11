@@ -14,7 +14,8 @@ import {
   Calendar,
   RefreshCw,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import { ProgressBar } from '@/components/ProgressBar';
 import { AddTuitionModal } from '@/components/AddTuitionModal';
@@ -44,6 +45,9 @@ export default function TeacherDashboard() {
   const [selectedDate, setSelectedDate] = useState('');
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [studentEmail, setStudentEmail] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tuitionToDelete, setTuitionToDelete] = useState<Tuition | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -233,6 +237,47 @@ export default function TeacherDashboard() {
         console.error('Failed to load PDF generator:', e);
       }
     }
+  };
+
+  const handleDeleteTuition = (tuition: Tuition) => {
+    setTuitionToDelete(tuition);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteTuition = async () => {
+    if (!tuitionToDelete) return;
+
+    setIsDeleting(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`/api/tuitions/${tuitionToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Tuition deleted successfully!');
+        setShowDeleteModal(false);
+        setTuitionToDelete(null);
+        // Refresh the tuitions list
+        await fetchTuitions();
+      } else {
+        setError(data.message || 'Failed to delete tuition');
+      }
+    } catch (error) {
+      console.error('Error deleting tuition:', error);
+      setError('Failed to delete tuition. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteTuition = () => {
+    setShowDeleteModal(false);
+    setTuitionToDelete(null);
   };
 
   if (status === 'loading' || isLoading) {
@@ -609,6 +654,18 @@ export default function TeacherDashboard() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           </button>
+                          
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTuition(tuition);
+                            }}
+                            className="group bg-gradient-to-r from-red-400 to-rose-500 hover:from-red-500 hover:to-rose-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            title="Delete Tuition"
+                            aria-label="Delete Tuition"
+                          >
+                            <Trash2 className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -729,6 +786,61 @@ export default function TeacherDashboard() {
                   <span className="flex items-center justify-center gap-2">
                     Add Student
                     <span className="group-hover:rotate-12 transition-transform duration-300">🎓</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && tuitionToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8 w-full max-w-md relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-rose-500/5 pointer-events-none"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-center mb-6">
+                <div className="bg-gradient-to-r from-red-400 to-rose-500 p-4 rounded-full">
+                  <Trash2 className="h-8 w-8 text-white" />
+                </div>
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-center bg-gradient-to-r from-gray-900 via-red-800 to-rose-800 bg-clip-text text-transparent mb-4">
+                Delete Tuition
+              </h3>
+              
+              <p className="text-center text-gray-600 mb-6">
+                Are you sure you want to delete <strong>{tuitionToDelete.subject}</strong> tuition? 
+                This action cannot be undone and will remove all associated class logs.
+              </p>
+
+              <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                <button
+                  onClick={cancelDeleteTuition}
+                  disabled={isDeleting}
+                  className="px-6 sm:px-8 py-3 sm:py-4 text-gray-700 border-2 border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 font-semibold transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteTuition}
+                  disabled={isDeleting}
+                  className="group bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        Delete
+                        <Trash2 className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                      </>
+                    )}
                   </span>
                 </button>
               </div>

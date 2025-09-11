@@ -72,10 +72,21 @@ const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Handle sign out redirect
+      if (url.startsWith('/auth/signout')) {
+        return `${baseUrl}/auth/signin`;
+      }
+      // Default redirect behavior
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
+    signOut: '/auth/signin',
   },
 };
 
