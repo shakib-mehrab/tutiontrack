@@ -119,7 +119,7 @@ export default function Register() {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                 placeholder="Enter your full name"
               />
             </div>
@@ -135,7 +135,7 @@ export default function Register() {
                 value={formData.email}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                 placeholder="Enter your email"
               />
             </div>
@@ -149,7 +149,7 @@ export default function Register() {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base appearance-none cursor-pointer"
+                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white hover:border-gray-400 transition-all duration-300 text-base appearance-none cursor-pointer shadow-sm"
               >
                 <option value="teacher">👨‍🏫 Teacher</option>
                 <option value="student">👨‍🎓 Student</option>
@@ -168,7 +168,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent pr-14 bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-14 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="Enter your password"
                 />
                 <button
@@ -193,7 +193,7 @@ export default function Register() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent pr-14 bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-14 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="Confirm your password"
                 />
                 <button

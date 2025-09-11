@@ -118,7 +118,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                   type="text"
                   value={formData.studentName}
                   onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="Enter student's full name (optional)"
                   disabled={isLoading}
                 />
@@ -134,7 +134,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                   type="email"
                   value={formData.studentEmail}
                   onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="student@example.com (optional - can be added later)"
                   disabled={isLoading}
                 />
@@ -150,7 +150,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                   type="text"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="Mathematics, Physics, etc."
                   required
                   disabled={isLoading}
@@ -167,7 +167,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                     type="time"
                     value={formData.startTime}
                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base"
+                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
                     required
                     disabled={isLoading}
                   />
@@ -182,7 +182,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                     type="time"
                     value={formData.endTime}
                     onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base"
+                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
                     required
                     disabled={isLoading}
                   />
@@ -201,7 +201,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                     max="7"
                     value={formData.daysPerWeek}
                     onChange={(e) => setFormData({ ...formData, daysPerWeek: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base"
+                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
                     disabled={isLoading}
                   />
                 </div>
@@ -217,7 +217,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
                     max="31"
                     value={formData.plannedClassesPerMonth}
                     onChange={(e) => setFormData({ ...formData, plannedClassesPerMonth: parseInt(e.target.value) || 4 })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base"
+                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
                     disabled={isLoading}
                   />
                 </div>

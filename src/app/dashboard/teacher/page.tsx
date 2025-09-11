@@ -705,7 +705,7 @@ export default function TeacherDashboard() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
                   placeholder="Select date"
                 />
                 <p className="text-xs sm:text-sm text-gray-500 mt-2">
@@ -759,7 +759,7 @@ export default function TeacherDashboard() {
                   type="email"
                   value={studentEmail}
                   onChange={(e) => setStudentEmail(e.target.value)}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-white transition-all duration-300 text-base placeholder-gray-400"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
                   placeholder="student@example.com"
                 />
                 <p className="text-xs sm:text-sm text-gray-500 mt-2">
