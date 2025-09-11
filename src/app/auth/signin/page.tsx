@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, BookOpen, Mail, RefreshCw } from 'lucide-react';
 
@@ -15,7 +15,6 @@ function SignInContent() {
   const [error, setError] = useState('');
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -37,6 +36,7 @@ function SignInContent() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/dashboard'
       });
 
       if (result?.error) {
@@ -46,9 +46,9 @@ function SignInContent() {
         } else {
           setError('Invalid email or password.');
         }
-      } else {
-        router.push('/dashboard');
-        router.refresh();
+      } else if (result?.ok) {
+        // Force redirect to dashboard
+        window.location.href = '/dashboard';
       }
     } catch {
       setError('Something went wrong. Please try again.');

@@ -77,10 +77,24 @@ const authOptions: NextAuthOptions = {
       if (url.startsWith('/auth/signout')) {
         return `${baseUrl}/auth/signin`;
       }
-      // Default redirect behavior
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      
+      // After successful sign in, redirect to dashboard
+      if (url === baseUrl || url === `${baseUrl}/` || url === '/') {
+        return `${baseUrl}/dashboard`;
+      }
+      
+      // Allow relative URLs
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // Allow same-origin URLs
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      
+      // Default to dashboard for successful auth
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {
