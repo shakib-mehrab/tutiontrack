@@ -98,12 +98,14 @@ export default function StudentDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4 rounded-3xl w-20 h-20 mx-auto mb-6 flex items-center justify-center animate-pulse shadow-2xl">
             <BookOpen className="h-10 w-10 text-white" />
           </div>
-          <p className="text-gray-700 font-semibold text-lg">Loading your learning dashboard...</p>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <p className="text-white font-semibold text-lg">Loading your learning dashboard...</p>
+          </div>
         </div>
       </div>
     );
@@ -115,9 +117,9 @@ export default function StudentDashboard() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
-      <header className="bg-gradient-to-r from-white/95 via-purple-50/95 to-pink-50/95 backdrop-blur-lg shadow-2xl border-b border-white/20 sticky top-0 z-30">
+      <header className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:py-6 gap-4">
             <div className="flex items-center">

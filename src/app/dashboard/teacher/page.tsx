@@ -237,12 +237,14 @@ export default function TeacherDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="text-center">
-          <div className="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <BookOpen className="h-8 w-8 text-white" />
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-2xl animate-pulse">
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <p className="text-white text-lg font-medium">Loading dashboard...</p>
+          </div>
         </div>
       </div>
     );
@@ -253,19 +255,19 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Mobile-First Responsive Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 lg:w-72 bg-white/95 backdrop-blur-lg shadow-2xl border-r border-white/20 hidden md:block">
+      <div className="fixed inset-y-0 left-0 z-50 w-64 lg:w-72 bg-white/10 backdrop-blur-md shadow-2xl border-r border-white/20 hidden md:block">
         <div className="flex flex-col h-full relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10 pointer-events-none"></div>
           
           <div className="relative z-10">
             {/* Logo */}
-            <div className="flex items-center px-6 py-6 border-b border-gray-200/50">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 rounded-2xl mr-4">
+            <div className="flex items-center px-6 py-6 border-b border-white/20">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-2xl mr-4">
                 <BookOpen className="h-8 w-8 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 TuitionTrack
               </span>
             </div>
@@ -288,25 +290,25 @@ export default function TeacherDashboard() {
           <nav className="flex-1 px-6 py-6 relative z-10">
             <ul className="space-y-3">
               <li>
-                <button className="group w-full flex items-center px-5 py-4 text-base font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <button className="group w-full flex items-center px-5 py-4 text-base font-bold text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                   <TrendingUp className="h-5 w-5 mr-4 group-hover:rotate-12 transition-transform duration-300" />
                   Dashboard
                 </button>
               </li>
               <li>
-                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-gray-700 hover:text-blue-600 bg-white/50 hover:bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <Users className="h-5 w-5 mr-4 group-hover:scale-110 transition-transform duration-300" />
                   Students
                 </button>
               </li>
               <li>
-                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-gray-700 hover:text-blue-600 bg-white/50 hover:bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <Calendar className="h-5 w-5 mr-4 group-hover:scale-110 transition-transform duration-300" />
                   Schedule
                 </button>
               </li>
               <li>
-                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-gray-700 hover:text-blue-600 bg-white/50 hover:bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <button className="group w-full flex items-center px-5 py-4 text-base font-semibold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <Settings className="h-5 w-5 mr-4 group-hover:rotate-90 transition-transform duration-300" />
                   Settings
                 </button>
@@ -315,7 +317,7 @@ export default function TeacherDashboard() {
           </nav>
 
           {/* Logout */}
-          <div className="px-6 py-6 border-t border-gray-200/50 relative z-10">
+          <div className="px-6 py-6 border-t border-white/20 relative z-10">
             <button
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
               className="group w-full flex items-center px-5 py-4 text-base font-semibold text-red-600 hover:text-white bg-red-50 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"

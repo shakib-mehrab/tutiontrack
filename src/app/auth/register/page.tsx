@@ -78,38 +78,38 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 w-full max-w-md sm:max-w-lg p-6 sm:p-8 lg:p-10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-blue-500/5 pointer-events-none"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 w-full max-w-md sm:max-w-lg p-6 sm:p-8 lg:p-10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-blue-500/10 pointer-events-none"></div>
         
         <div className="relative z-10">
           <div className="text-center mb-8 sm:mb-10">
             <div className="flex justify-center mb-6">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4 sm:p-5 rounded-2xl shadow-lg animate-pulse">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 sm:p-5 rounded-2xl shadow-lg animate-pulse">
                 <UserPlus className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-emerald-800 bg-clip-text text-transparent mb-3 sm:mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent mb-3 sm:mb-4">
               Create Account
             </h1>
-            <p className="text-gray-600 text-base sm:text-lg">Join TuitionTrack today and transform your teaching experience</p>
+            <p className="text-white/80 text-base sm:text-lg">Join TuitionTrack today and transform your teaching experience</p>
           </div>
 
           {error && (
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
-              <p className="text-red-600 text-sm sm:text-base font-medium">{error}</p>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
+              <p className="text-red-300 text-sm sm:text-base font-medium">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
-              <p className="text-green-600 text-sm sm:text-base font-medium">{success}</p>
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
+              <p className="text-emerald-300 text-sm sm:text-base font-medium">{success}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
             <div className="group">
-              <label htmlFor="name" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-green-600 transition-colors">
+              <label htmlFor="name" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-emerald-400 transition-colors">
                 Full Name
               </label>
               <input
@@ -125,7 +125,7 @@ export default function Register() {
             </div>
 
             <div className="group">
-              <label htmlFor="email" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-green-600 transition-colors">
+              <label htmlFor="email" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-emerald-400 transition-colors">
                 Email Address
               </label>
               <input
@@ -141,7 +141,7 @@ export default function Register() {
             </div>
 
             <div className="group">
-              <label htmlFor="role" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-green-600 transition-colors">
+              <label htmlFor="role" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-emerald-400 transition-colors">
                 Role
               </label>
               <select
@@ -157,7 +157,7 @@ export default function Register() {
             </div>
 
             <div className="group">
-              <label htmlFor="password" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-green-600 transition-colors">
+              <label htmlFor="password" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-emerald-400 transition-colors">
                 Password
               </label>
               <div className="relative">
@@ -182,7 +182,7 @@ export default function Register() {
             </div>
 
             <div className="group">
-              <label htmlFor="confirmPassword" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-green-600 transition-colors">
+              <label htmlFor="confirmPassword" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-emerald-400 transition-colors">
                 Confirm Password
               </label>
               <div className="relative">

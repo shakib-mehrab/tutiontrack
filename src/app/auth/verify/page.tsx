@@ -105,8 +105,8 @@ function OTPVerificationContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             {status === 'form' && (
@@ -260,12 +260,12 @@ function OTPVerificationContent() {
 export default function VerifyOTP() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="bg-green-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8 text-center">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center animate-pulse">
             <BookOpen className="h-8 w-8 text-white" />
           </div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-white">Loading...</p>
         </div>
       </div>
     }>
