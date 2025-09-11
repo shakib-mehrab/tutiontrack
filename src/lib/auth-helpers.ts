@@ -1,4 +1,4 @@
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { User } from '@/types';
 import { 
   sendWelcomeEmail
@@ -20,6 +20,10 @@ export interface RegisterUserData {
 
 export async function registerUser(userData: RegisterUserData): Promise<{ success: boolean; message: string; uid?: string }> {
   try {
+    // Get Firebase Admin instances
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    
     // Check if user already exists in Firestore
     const usersRef = adminDb.collection('users');
     const existingUsers = await usersRef.where('email', '==', userData.email).get();
@@ -78,6 +82,7 @@ export async function registerUser(userData: RegisterUserData): Promise<{ succes
 
 export async function getUserData(uid: string): Promise<User | null> {
   try {
+    const adminDb = getAdminDb();
     const userDoc = await adminDb.collection('users').doc(uid).get();
     if (userDoc.exists) {
       return userDoc.data() as User;
@@ -91,6 +96,7 @@ export async function getUserData(uid: string): Promise<User | null> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
+    const adminDb = getAdminDb();
     const usersRef = adminDb.collection('users');
     const querySnapshot = await usersRef.where('email', '==', email).get();
     
@@ -106,6 +112,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function verifyUserOTP(email: string, otpCode: string): Promise<{ success: boolean; message: string }> {
   try {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    
     // Find user by email
     const usersRef = adminDb.collection('users');
     const querySnapshot = await usersRef.where('email', '==', email).get();
@@ -193,6 +202,7 @@ export async function verifyUserOTP(email: string, otpCode: string): Promise<{ s
 
 export async function resendOTP(email: string): Promise<{ success: boolean; message: string }> {
   try {
+    const adminDb = getAdminDb();
     const user = await getUserByEmail(email);
     
     if (!user) {
