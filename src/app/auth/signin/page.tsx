@@ -39,7 +39,6 @@ function SignInContent() {
         callbackUrl: '/dashboard'
       });
 
-      // This shouldn't execute if redirect: true works
       if (result?.error) {
         if (result.error.includes('verify')) {
           setError('Please verify your email before signing in.');
@@ -48,8 +47,9 @@ function SignInContent() {
           setError('Invalid email or password.');
         }
       }
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -62,165 +62,181 @@ function SignInContent() {
     }
 
     setIsResending(true);
+    setError('');
+    setSuccessMessage('');
+
     try {
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        setSuccessMessage('Verification email sent! Please check your inbox.');
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccessMessage('Verification email sent! Check your inbox.');
         setShowResendVerification(false);
-        setError('');
       } else {
-        setError(result.message);
+        setError(data.message || 'Failed to send verification email.');
       }
-    } catch {
-      setError('Failed to resend verification email. Please try again.');
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      setError('Failed to send verification email.');
     } finally {
       setIsResending(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 w-full max-w-md sm:max-w-lg p-6 sm:p-8 lg:p-10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10 pointer-events-none"></div>
-        
-        <div className="relative z-10">
-          <div className="text-center mb-8 sm:mb-10">
-            <div className="flex justify-center mb-6">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 sm:p-5 rounded-2xl shadow-lg animate-pulse">
-                <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-              </div>
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-3 sm:mb-4">
-              Welcome Back
-            </h1>
-            <p className="text-white/80 text-base sm:text-lg">Sign in to your TuitionTrack account and continue learning</p>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="mobile-container">
+        {/* Logo and Title */}
+        <div className="text-center mb-8">
+          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+            <BookOpen className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Welcome Back</h1>
+          <p className="text-slate-600">Sign in to continue your learning journey</p>
+        </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="success-message mb-6">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-message mb-6">
+            {error}
+          </div>
+        )}
+
+        {/* Sign In Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="form-label" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+              placeholder="Enter your email"
+              required
+              autoComplete="email"
+            />
           </div>
 
-          {successMessage && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
-              <p className="text-emerald-300 text-sm sm:text-base font-medium">{successMessage}</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 sm:p-5 mb-6 backdrop-blur-sm">
-              <p className="text-red-300 text-sm sm:text-base font-medium mb-2">{error}</p>
-              {showResendVerification && (
-                <button
-                  onClick={handleResendVerification}
-                  disabled={isResending}
-                  className="mt-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 disabled:opacity-50 transition-all duration-200 transform hover:scale-105"
-                >
-                  {isResending ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Mail className="h-4 w-4" />
-                  )}
-                  {isResending ? 'Sending...' : 'Resend verification email'}
-                </button>
-              )}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-7">
-            <div className="group">
-              <label htmlFor="email" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-blue-400 transition-colors">
-                Email Address
-              </label>
+          <div>
+            <label className="form-label" htmlFor="password">
+              Password
+            </label>
+            <div className="relative">
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input pr-12"
+                placeholder="Enter your password"
                 required
-                className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
-                placeholder="Enter your email"
+                autoComplete="current-password"
               />
-            </div>
-
-            <div className="group">
-              <label htmlFor="password" className="block text-sm sm:text-base font-semibold text-white mb-3 group-focus-within:text-blue-400 transition-colors">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-14 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1 rounded-lg hover:bg-blue-50"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5 sm:h-6 sm:w-6" /> : <Eye className="h-5 w-5 sm:h-6 sm:w-6" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-4 sm:py-5 px-4 rounded-2xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="flex items-center justify-center gap-2">
-                {isLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Signing In...
-                  </>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
                 ) : (
-                  <>
-                    Sign In
-                    <BookOpen className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-                  </>
+                  <Eye className="h-5 w-5" />
                 )}
-              </span>
-            </button>
-          </form>
-
-          <div className="mt-8 sm:mt-10 text-center space-y-4">
-            <p className="text-gray-600 text-base">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-all duration-200">
-                Sign up
-              </Link>
-            </p>
-
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                🔒 Note: Only verified email addresses can sign in
-              </p>
+              </button>
             </div>
           </div>
+
+          {/* Resend Verification */}
+          {showResendVerification && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center mb-2">
+                <Mail className="h-5 w-5 text-blue-600 mr-2" />
+                <p className="font-medium text-blue-800">Email Verification Required</p>
+              </div>
+              <p className="text-blue-700 text-sm mb-3">
+                Please check your email and click the verification link before signing in.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={isResending}
+                className="btn-secondary w-auto px-4 py-2 bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 flex items-center"
+              >
+                {isResending ? (
+                  <div className="loader w-4 h-4 mr-2"></div>
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Resend Verification Email
+              </button>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn-primary flex items-center justify-center"
+          >
+            {isLoading ? (
+              <>
+                <div className="loader w-5 h-5 mr-2"></div>
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
+        </form>
+
+        {/* Sign Up Link */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-600">
+            Don&rsquo;t have an account?{' '}
+            <Link 
+              href="/auth/register" 
+              className="font-semibold text-blue-600 hover:text-blue-800 no-underline"
+            >
+              Create one here
+            </Link>
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-slate-400 text-sm">
+            Secure sign in powered by TuitionTrack
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-export default function SignIn() {
+export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 flex items-center justify-center">
-        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 text-center border border-white/20">
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center animate-pulse">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mobile-container text-center">
+          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <BookOpen className="h-8 w-8 text-white" />
           </div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <div className="loader-large"></div>
         </div>
       </div>
     }>

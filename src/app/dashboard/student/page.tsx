@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Download,
   Clock,
-  User 
+  User,
+  GraduationCap
 } from 'lucide-react';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Tuition } from '@/types';
@@ -49,20 +50,16 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/auth/signin' });
-  };
-
   const calculateProgress = (tuition: Tuition) => {
-    return Math.round((tuition.takenClasses / tuition.plannedClassesPerMonth) * 100);
+    return tuition.plannedClassesPerMonth > 0 
+      ? Math.round((tuition.takenClasses / tuition.plannedClassesPerMonth) * 100) 
+      : 0;
   };
 
   const handleExportPDF = async (tuition: Tuition) => {
     try {
-      // Dynamically import PDF generator only when needed
       const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
       
-      // Fetch class logs for this tuition
       const response = await fetch(`/api/tuitions/${tuition.id}/logs`);
       const data = await response.json();
       
@@ -73,7 +70,6 @@ export default function StudentDashboard() {
           month: tuition.currentMonthYear,
         });
       } else {
-        // Fallback: export without logs
         downloadTuitionPDF({
           tuition,
           logs: [],
@@ -82,7 +78,6 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      // Fallback: try basic export
       try {
         const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
         downloadTuitionPDF({
@@ -98,254 +93,195 @@ export default function StudentDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4 rounded-3xl w-20 h-20 mx-auto mb-6 flex items-center justify-center animate-pulse shadow-2xl">
-            <BookOpen className="h-10 w-10 text-white" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mobile-container text-center">
+          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <GraduationCap className="h-8 w-8 text-white" />
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <p className="text-white font-semibold text-lg">Loading your learning dashboard...</p>
-          </div>
+          <div className="loader-large"></div>
+          <p className="text-slate-600 mt-4">Loading your classes...</p>
         </div>
       </div>
     );
   }
 
-  const totalClasses = tuitions.reduce((sum, t) => sum + t.takenClasses, 0);
-  const avgProgress = tuitions.length > 0 
-    ? Math.round(tuitions.reduce((sum, t) => sum + calculateProgress(t), 0) / tuitions.length) 
-    : 0;
+  if (status === 'unauthenticated') {
+    return null;
+  }
+
+  const totalClasses = tuitions.reduce((sum, tuition) => sum + tuition.takenClasses, 0);
+  const totalPlanned = tuitions.reduce((sum, tuition) => sum + tuition.plannedClassesPerMonth, 0);
+  const overallProgress = totalPlanned > 0 ? Math.round((totalClasses / totalPlanned) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:py-6 gap-4">
+      <div className="app-header">
+        <div className="mobile-container">
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-2 rounded-2xl mr-4 shadow-lg">
-                <BookOpen className="h-8 w-8 text-white" />
+              <div className="gradient-bg p-2 rounded-xl mr-3">
+                <GraduationCap className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent">
-                TuitionTrack
-              </span>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="text-left sm:text-right">
-                <p className="text-sm text-gray-600">Welcome back,</p>
-                <p className="font-bold text-gray-900 flex items-center gap-2">
-                  👨‍🎓 {session?.user?.name}
-                </p>
+              <div>
+                <h1 className="text-lg font-bold text-slate-800">TuitionTrack</h1>
+                <p className="text-sm text-slate-500">Student Portal</p>
               </div>
-              <button
-                onClick={handleSignOut}
-                className="group flex items-center justify-center sm:justify-start px-4 py-2 text-red-600 hover:text-white bg-red-50 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 rounded-2xl font-semibold shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-              >
-                <LogOut className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                Sign Out
-              </button>
             </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-white/95 via-purple-50/95 to-pink-50/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="mobile-container pb-8">
+        {/* Welcome Section */}
+        <div className="card gradient-bg text-white mb-6">
+          <div className="flex items-center mb-4">
+            <div className="bg-white/20 p-3 rounded-xl mr-4">
+              <User className="h-6 w-6 text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent mb-3">
-                🎓 My Learning Dashboard
-              </h1>
-              <p className="text-gray-600 text-base sm:text-lg">
-                Track your learning progress and upcoming classes with ease
-              </p>
+              <h2 className="text-xl font-bold">Hello, {session?.user?.name}!</h2>
+              <p className="text-white/80">Ready to learn today?</p>
             </div>
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-6 py-4 rounded-2xl border border-purple-200/50 shadow-lg">
-              <p className="text-sm font-bold text-purple-700 text-center">
-                📅 {new Date().toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  year: 'numeric' 
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="group bg-white/95 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-r from-blue-400 to-indigo-500 p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <BookOpen className="h-8 w-8 text-white" />
-              </div>
-              <div className="ml-6">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Tuitions</p>
-                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  {tuitions.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-white/95 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-r from-green-400 to-emerald-500 p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div className="ml-6">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Classes This Month</p>
-                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  {totalClasses}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-white/95 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-r from-purple-400 to-pink-500 p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="h-8 w-8 text-white" />
-              </div>
-              <div className="ml-6">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Overall Progress</p>
-                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {avgProgress}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tuitions List */}
-        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          <div className="px-6 sm:px-8 py-6 bg-gradient-to-r from-gray-50 to-purple-50 border-b border-gray-200/50">
-            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-purple-800 bg-clip-text text-transparent">
-              📚 My Learning Journey
-            </h2>
           </div>
           
+          {/* Overall Progress */}
+          <div className="bg-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold">Overall Progress</span>
+              <span className="text-white/80">{totalClasses}/{totalPlanned} classes</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-3">
+              <div 
+                className={`bg-white rounded-full h-3 transition-all duration-500`}
+                data-progress={Math.min(overallProgress, 100)}
+                style={{width: `${Math.min(overallProgress, 100)}%`}}
+              ></div>
+            </div>
+            <div className="text-right mt-1">
+              <span className="text-sm text-white/80">{overallProgress}% complete</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="card text-center">
+            <div className="gradient-bg p-3 rounded-xl w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-bold text-slate-800">{tuitions.length}</h3>
+            <p className="text-sm text-slate-600">Active Classes</p>
+          </div>
+          
+          <div className="card text-center">
+            <div className="gradient-bg p-3 rounded-xl w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-bold text-slate-800">{totalClasses}</h3>
+            <p className="text-sm text-slate-600">Classes Attended</p>
+          </div>
+        </div>
+
+        {/* Your Classes */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-slate-800">Your Classes</h3>
+
           {tuitions.length === 0 ? (
-            <div className="px-6 sm:px-12 py-16 text-center">
-              <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-6 rounded-3xl w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                <BookOpen className="h-12 w-12 text-purple-600" />
+            <div className="card text-center py-12">
+              <div className="gradient-bg p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center opacity-50">
+                <BookOpen className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">No tuitions yet</h3>
-              <p className="text-gray-600 text-base sm:text-lg max-w-md mx-auto">
-                🎯 Your teacher will add you to tuitions. Start your learning journey soon!
-              </p>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">No Classes Yet</h3>
+              <p className="text-slate-600 mb-4">Your teacher will add you to classes soon</p>
             </div>
           ) : (
-            <div className="p-6 space-y-6">
-              {tuitions.map((tuition) => (
-                <div key={tuition.id} className="group bg-gradient-to-r from-white via-purple-50/30 to-pink-50/30 hover:from-purple-50/50 hover:to-pink-50/50 border border-gray-200/50 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => router.push(`/tuition/${tuition.id}`)}>
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-gradient-to-r from-purple-400 to-pink-500 p-3 rounded-2xl shadow-lg">
-                        <BookOpen className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 hover:text-purple-600 transition-colors group-hover:text-purple-600">
-                          📚 {tuition.subject}
-                        </h3>
-                        <div className="flex items-center text-sm text-gray-600 mt-1">
-                          <User className="h-4 w-4 mr-2" />
-                          <span className="font-medium">👨‍🏫 Teacher: {tuition.teacherName}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleExportPDF(tuition);
-                      }}
-                      className="group bg-gradient-to-r from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
-                    >
-                      <Download className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
-                      Export Log
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white/80 p-4 rounded-2xl border border-gray-200/50 shadow-sm">
-                      <div className="flex items-center text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        <Clock className="h-4 w-4 mr-2" />
-                        🕐 Schedule
-                      </div>
-                      <p className="text-gray-900 font-bold text-lg">
+            tuitions.map((tuition) => {
+              const progress = calculateProgress(tuition);
+              return (
+                <div key={tuition.id} className="card">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-800 text-lg">{tuition.subject}</h4>
+                      <p className="text-slate-600">
+                        Teacher: {tuition.teacherName}
+                      </p>
+                      <div className="flex items-center text-sm text-slate-500 mt-1">
+                        <Clock className="h-4 w-4 mr-1" />
                         {tuition.startTime} - {tuition.endTime}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        📅 {tuition.daysPerWeek} days per week
-                      </p>
-                    </div>
-
-                    <div className="bg-white/80 p-4 rounded-2xl border border-gray-200/50 shadow-sm">
-                      <div className="flex items-center text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        📊 Classes
                       </div>
-                      <p className="text-gray-900 font-bold text-lg">
-                        {tuition.takenClasses} / {tuition.plannedClassesPerMonth}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        ✅ Completed this month
-                      </p>
-                    </div>
-
-                    <div className="bg-white/80 p-4 rounded-2xl border border-gray-200/50 shadow-sm sm:col-span-2 lg:col-span-1">
-                      <div className="flex items-center text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                        📈 Progress
+                      <div className="flex items-center text-sm text-slate-500 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {tuition.daysPerWeek} days per week
                       </div>
-                      <p className="text-gray-900 font-bold text-lg">
-                        {calculateProgress(tuition)}%
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        🎯 Monthly completion
-                      </p>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="bg-white/80 p-4 rounded-2xl border border-gray-200/50 mb-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-semibold text-gray-700">📈 Learning Progress</span>
-                      <span className="text-lg font-bold text-purple-600 px-3 py-1 bg-purple-100 rounded-xl">
-                        {calculateProgress(tuition)}%
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-700">Progress This Month</span>
+                      <span className="text-sm text-slate-600">
+                        {tuition.takenClasses}/{tuition.plannedClassesPerMonth} classes
                       </span>
                     </div>
-                    <ProgressBar progress={calculateProgress(tuition)} />
+                    <ProgressBar 
+                      progress={progress}
+                      className="h-2"
+                    />
                   </div>
 
-                  {calculateProgress(tuition) >= 100 && (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/50 rounded-2xl p-4 shadow-sm">
-                      <p className="text-green-700 font-semibold text-center">
-                        🎉 Congratulations! You&apos;ve completed all planned classes for this month! 🏆
-                      </p>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => router.push(`/tuition/${tuition.id}`)}
+                      className="btn-secondary flex-1 text-sm py-2"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => handleExportPDF(tuition)}
+                      className="btn-primary flex-1 text-sm py-2 flex items-center justify-center"
+                      title="Download Report"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Report
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-          <div className="flex flex-wrap gap-4">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-              <Download className="h-4 w-4 mr-2" />
-              Download All Reports
-            </button>
-            <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              View Schedule
-            </button>
+        {tuitions.length > 0 && (
+          <div className="card mt-6 gradient-bg text-white text-center">
+            <h3 className="text-lg font-bold mb-2">Keep Learning!</h3>
+            <p className="text-white/80 mb-4">
+              You&rsquo;ve completed {totalClasses} classes this month. Great progress!
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const bestTuition = tuitions.reduce((best, current) => 
+                    calculateProgress(current) < calculateProgress(best) ? current : best
+                  );
+                  router.push(`/tuition/${bestTuition.id}`);
+                }}
+                className="btn-secondary bg-white text-blue-900 hover:bg-gray-100 flex-1"
+              >
+                Focus on Weak Subject
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

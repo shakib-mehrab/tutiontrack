@@ -310,15 +310,15 @@ export default function TuitionDetailsPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-2xl animate-pulse">
+          <div className="gradient-bg p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg animate-pulse">
             <BookOpen className="h-10 w-10 text-white" />
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <p className="text-white text-lg font-medium">Loading tuition details...</p>
-            <div className="mt-4 w-32 h-1 bg-white/20 rounded-full mx-auto overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
+          <div className="card max-w-xs">
+            <p className="text-slate-800 text-lg font-medium mb-4">Loading tuition details...</p>
+            <div className="w-32 h-1 bg-slate-200 rounded-full mx-auto overflow-hidden">
+              <div className="h-full gradient-bg rounded-full animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -328,16 +328,16 @@ export default function TuitionDetailsPage() {
 
   if (error && !details) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 max-w-md mx-4">
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 p-4 rounded-xl w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+          <div className="card max-w-md">
+            <div className="gradient-bg p-4 rounded-xl w-16 h-16 mx-auto mb-6 flex items-center justify-center">
               <ArrowLeft className="h-8 w-8 text-white" />
             </div>
-            <p className="text-red-400 mb-6 text-lg">{error}</p>
+            <p className="text-red-600 mb-6 text-lg">{error}</p>
             <button
               onClick={() => router.back()}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+              className="btn-primary"
             >
               Go Back
             </button>
@@ -353,29 +353,29 @@ export default function TuitionDetailsPage() {
   const progress = calculateProgress(tuition.takenClasses, tuition.plannedClassesPerMonth);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto p-4 max-w-6xl">
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-white/70 hover:text-white mb-6 group transition-colors duration-200"
+            className="flex items-center text-slate-600 hover:text-slate-800 mb-4 group transition-colors duration-200"
           >
             <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
             Back to Dashboard
           </button>
           
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="text-white">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
                 {tuition.subject}
                 {tuition.studentName && ` - ${tuition.studentName}`}
               </h1>
-              <p className="text-white/70 mt-2 text-sm sm:text-base">Comprehensive tuition management & tracking</p>
+              <p className="text-slate-600">Comprehensive tuition management & tracking</p>
             </div>
             <button
               onClick={handleExportPDF}
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-2 font-medium transform hover:scale-105"
+              className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               <Download className="h-5 w-5" />
               <span className="hidden sm:inline">Export PDF</span>
@@ -386,80 +386,74 @@ export default function TuitionDetailsPage() {
 
         {/* Notifications */}
         {error && (
-          <div className="mb-6 bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-300 px-6 py-4 rounded-xl">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-              {error}
-            </div>
+          <div className="error-message mb-6 animate-fade-in">
+            {error}
           </div>
         )}
         
         {success && (
-          <div className="mb-6 bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 text-emerald-300 px-6 py-4 rounded-xl">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              {success}
-            </div>
+          <div className="success-message mb-6 animate-fade-in">
+            {success}
           </div>
         )}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sidebar - Tuition Information */}
-          <div className="lg:col-span-4">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
-              <h2 className="text-xl font-bold mb-6 flex items-center text-white">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl mr-3">
+          <div className="lg:col-span-1">
+            <div className="card">
+              <h2 className="text-xl font-bold mb-6 flex items-center text-slate-800">
+                <div className="gradient-bg p-2 rounded-xl mr-3">
                   <BookOpen className="h-5 w-5 text-white" />
                 </div>
-                Tuition Information
+                Tuition Info
               </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Teacher Info */}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-2 rounded-lg">
+                    <div className="gradient-bg p-2 rounded-lg">
                       <User className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-white/60 text-sm">Teacher</p>
-                      <p className="font-semibold text-white">{tuition.teacherName}</p>
+                      <p className="text-slate-600 text-sm">Teacher</p>
+                      <p className="font-semibold text-slate-800">{tuition.teacherName}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Student Info */}
                 {tuition.studentName ? (
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg">
+                      <div className="gradient-bg p-2 rounded-lg">
                         <User className="h-4 w-4 text-white" />
                       </div>
                       <div>
-                        <p className="text-white/60 text-sm">Student</p>
-                        <p className="font-semibold text-white">{tuition.studentName}</p>
+                        <p className="text-slate-600 text-sm">Student</p>
+                        <p className="font-semibold text-slate-800">{tuition.studentName}</p>
                         {tuition.studentEmail && (
-                          <p className="text-white/50 text-sm">{tuition.studentEmail}</p>
+                          <p className="text-slate-500 text-sm">{tuition.studentEmail}</p>
                         )}
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl p-4">
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-2 rounded-lg">
+                        <div className="gradient-bg p-2 rounded-lg">
                           <User className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                          <p className="text-amber-200 font-medium text-sm">No Student Assigned</p>
-                          <p className="text-amber-300/70 text-xs">Add a student to this tuition</p>
+                          <p className="text-orange-700 font-medium text-sm">No Student Assigned</p>
+                          <p className="text-orange-600 text-xs">Add a student to this tuition</p>
                         </div>
                       </div>
                       <button
                         onClick={() => setShowStudentModal(true)}
-                        className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                        className="btn-primary px-3 py-1.5 text-sm"
                       >
                         Add Student
                       </button>
@@ -468,42 +462,42 @@ export default function TuitionDetailsPage() {
                 )}
 
                 {/* Schedule Info */}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-2 rounded-lg">
+                    <div className="gradient-bg p-2 rounded-lg">
                       <Clock className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-white/60 text-sm">Schedule</p>
-                      <p className="font-semibold text-white">{tuition.startTime} - {tuition.endTime}</p>
+                      <p className="text-slate-600 text-sm">Schedule</p>
+                      <p className="font-semibold text-slate-800">{tuition.startTime} - {tuition.endTime}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Days per Week */}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-2 rounded-lg">
+                    <div className="gradient-bg p-2 rounded-lg">
                       <Calendar className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-white/60 text-sm">Days per Week</p>
-                      <p className="font-semibold text-white">{tuition.daysPerWeek}</p>
+                      <p className="text-slate-600 text-sm">Days per Week</p>
+                      <p className="font-semibold text-slate-800">{tuition.daysPerWeek}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Progress Section */}
-                <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-5">
-                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                  <h3 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
+                    <div className="w-2 h-2 gradient-bg rounded-full"></div>
                     Monthly Progress
                   </h3>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-white/80 text-sm">
+                    <span className="text-slate-600 text-sm">
                       {tuition.takenClasses} / {tuition.plannedClassesPerMonth} classes
                     </span>
-                    <span className={`text-sm font-bold ${getProgressColor(progress)} bg-white/10 px-2 py-1 rounded-lg`}>
+                    <span className={`text-sm font-bold ${getProgressColor(progress)} bg-white px-2 py-1 rounded-lg border`}>
                       {Math.round(progress)}%
                     </span>
                   </div>
@@ -511,29 +505,29 @@ export default function TuitionDetailsPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                  <h3 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
+                    <div className="w-2 h-2 gradient-bg rounded-full"></div>
                     Quick Actions
                   </h3>
                   <div className="space-y-3">
                     <button
                       onClick={() => setShowDateModal(true)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="btn-primary w-full flex items-center justify-center gap-2"
                     >
                       <Plus className="h-4 w-4" />
                       Add Class
                     </button>
                     <button
                       onClick={() => handleClassUpdate('decrement')}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="btn-secondary w-full flex items-center justify-center gap-2"
                     >
                       <Minus className="h-4 w-4" />
                       Remove Class
                     </button>
                     <button
                       onClick={() => handleClassUpdate('reset')}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="btn-secondary w-full flex items-center justify-center gap-2"
                     >
                       <RotateCcw className="h-4 w-4" />
                       Reset Count
@@ -545,46 +539,46 @@ export default function TuitionDetailsPage() {
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-8">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="lg:col-span-2">
+            <div className="space-y-6">
               {/* Class Dates Card */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
-                <h2 className="text-xl font-bold mb-6 flex items-center text-white">
-                  <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-2 rounded-xl mr-3">
+              <div className="card">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-slate-800">
+                  <div className="gradient-bg p-2 rounded-xl mr-3">
                     <CalendarDays className="h-5 w-5 text-white" />
                   </div>
                   Class Dates
-                  <span className="ml-auto bg-emerald-500/20 text-emerald-300 text-sm px-3 py-1 rounded-full font-medium">
+                  <span className="ml-auto bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
                     {classDates.length}
                   </span>
                 </h2>
                 
-                <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 max-h-80 overflow-y-auto">
                   {classDates.length > 0 ? (
                     classDates.map((classLog, index) => (
-                      <div key={classLog.id} className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-4 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all duration-200">
+                      <div key={classLog.id} className="bg-green-50 border border-green-200 rounded-xl p-4 hover:bg-green-100 transition-all duration-200">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                            <p className="font-semibold text-emerald-200">
+                            <div className="w-2 h-2 gradient-bg rounded-full"></div>
+                            <p className="font-semibold text-slate-800">
                               Class #{classDates.length - index}
                             </p>
                           </div>
-                          <div className="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-1 rounded-lg font-medium">
+                          <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-lg font-medium">
                             {formatDate(classLog.classDate || classLog.date)}
                           </div>
                         </div>
-                        <p className="text-white/60 text-sm">
-                          Added by <span className="text-white font-medium">{classLog.addedByName}</span> at {formatTime(classLog.date)}
+                        <p className="text-slate-600 text-sm">
+                          Added by <span className="text-slate-800 font-medium">{classLog.addedByName}</span> at {formatTime(classLog.date)}
                         </p>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-12">
-                      <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl p-8 border border-emerald-500/30">
-                        <CalendarDays className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-                        <p className="text-white/60 text-lg">No classes recorded yet</p>
-                        <p className="text-white/40 text-sm mt-2">Start by adding your first class!</p>
+                      <div className="bg-slate-50 rounded-2xl p-8 border border-slate-200">
+                        <CalendarDays className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 text-lg">No classes recorded yet</p>
+                        <p className="text-slate-500 text-sm mt-2">Start by adding your first class!</p>
                       </div>
                     </div>
                   )}
@@ -592,18 +586,18 @@ export default function TuitionDetailsPage() {
               </div>
 
               {/* Activity Log Card */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300">
-                <h2 className="text-xl font-bold mb-6 flex items-center text-white">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-xl mr-3">
+              <div className="card">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-slate-800">
+                  <div className="gradient-bg p-2 rounded-xl mr-3">
                     <Clock className="h-5 w-5 text-white" />
                   </div>
                   Activity Log
-                  <span className="ml-auto bg-blue-500/20 text-blue-300 text-sm px-3 py-1 rounded-full font-medium">
+                  <span className="ml-auto bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
                     {logs.length}
                   </span>
                 </h2>
                 
-                <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 max-h-80 overflow-y-auto">
                   {logs.length > 0 ? (
                     logs.map((log) => {
                       const isIncrement = log.actionType === 'increment';
@@ -666,17 +660,17 @@ export default function TuitionDetailsPage() {
       {/* Add Class Modal */}
       {showDateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in duration-200">
+          <div className="card w-full max-w-md mx-4 animate-fade-in">
             <div className="text-center mb-6">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Plus className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Add New Class</h3>
-              <p className="text-white/60 text-sm">Record a new class session</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Add New Class</h3>
+              <p className="text-slate-600 text-sm">Record a new class session</p>
             </div>
             
             <div className="mb-6">
-              <label htmlFor="classDate" className="block text-sm font-semibold text-white mb-3">
+              <label htmlFor="classDate" className="block text-sm font-semibold text-slate-800 mb-3">
                 Class Date (optional)
               </label>
               <input
@@ -684,11 +678,11 @@ export default function TuitionDetailsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
+                className="input-field"
                 placeholder="Select date"
               />
-              <p className="text-white/50 text-xs mt-2 flex items-center gap-2">
-                <div className="w-1 h-1 bg-white/50 rounded-full"></div>
+              <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
+                <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
                 Leave empty to use today&apos;s date
               </p>
             </div>
@@ -699,13 +693,13 @@ export default function TuitionDetailsPage() {
                   setShowDateModal(false);
                   setSelectedDate('');
                 }}
-                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
+                className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddClass}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className="btn-primary flex-1"
               >
                 Add Class
               </button>
@@ -717,13 +711,13 @@ export default function TuitionDetailsPage() {
       {/* Add Student Modal */}
       {showStudentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in duration-200">
+          <div className="card w-full max-w-md mx-4 animate-fade-in">
             <div className="text-center mb-6">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <User className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Add Student</h3>
-              <p className="text-white/60 text-sm">Connect a student to this tuition</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Add Student</h3>
+              <p className="text-slate-600 text-sm">Connect a student to this tuition</p>
             </div>
             
             <div className="mb-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, XCircle, Mail, RefreshCw, BookOpen } from 'lucide-react';
@@ -16,12 +16,11 @@ function OTPVerificationContent() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get('email');
 
-  // Initialize email from URL parameter if available
-  useState(() => {
+  useEffect(() => {
     if (emailParam) {
       setEmail(emailParam);
     }
-  });
+  }, [emailParam]);
 
   const handleVerifyOTP = async () => {
     if (!email || !otp) {
@@ -50,19 +49,19 @@ function OTPVerificationContent() {
       
       if (result.success) {
         setStatus('success');
-        setMessage(result.message);
+        setMessage('Your email has been verified successfully!');
         
-        // Redirect to sign in after 3 seconds
         setTimeout(() => {
           router.push('/auth/signin?verified=true');
-        }, 3000);
+        }, 2000);
       } else {
         setStatus('error');
-        setMessage(result.message);
+        setMessage(result.message || 'Invalid OTP code. Please try again.');
       }
-    } catch {
+    } catch (error) {
+      console.error('OTP verification error:', error);
       setStatus('error');
-      setMessage('Failed to verify OTP. Please try again.');
+      setMessage('An error occurred during verification. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -89,183 +88,215 @@ function OTPVerificationContent() {
       const result = await response.json();
       
       if (result.success) {
-        setMessage('New OTP sent! Please check the console for your verification code.');
-        setStatus('form');
-        setOtp(''); // Clear existing OTP
+        setMessage('New OTP code sent to your email!');
+        setOtp(''); // Clear the OTP field
       } else {
-        setStatus('error');
-        setMessage(result.message);
+        setMessage(result.message || 'Failed to resend OTP. Please try again.');
       }
-    } catch {
-      setStatus('error');
+    } catch (error) {
+      console.error('Resend OTP error:', error);
       setMessage('Failed to resend OTP. Please try again.');
     } finally {
       setIsResending(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            {status === 'form' && (
-              <div className="bg-blue-600 p-3 rounded-full">
-                <Mail className="h-8 w-8 text-white" />
-              </div>
-            )}
-            {status === 'success' && (
-              <div className="bg-green-600 p-3 rounded-full">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-            )}
-            {status === 'error' && (
-              <div className="bg-red-600 p-3 rounded-full">
-                <XCircle className="h-8 w-8 text-white" />
-              </div>
-            )}
+  if (status === 'success') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mobile-container text-center">
+          <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+            <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {status === 'form' && 'Verify Your Account'}
-            {status === 'success' && 'Email Verified!'}
-            {status === 'error' && 'Verification Failed'}
-          </h1>
-          
-          <p className="text-gray-600 text-sm">
-            {status === 'form' && 'Enter your email and the 6-digit OTP code you received'}
-            {status === 'success' && 'Your email has been successfully verified'}
-            {status === 'error' && message}
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Email Verified!</h1>
+          <div className="success-message">
+            {message}
+          </div>
+          <p className="text-slate-600 mt-4">
+            Redirecting to sign in page...
           </p>
+          <div className="loader-large"></div>
         </div>
+      </div>
+    );
+  }
 
-        {status === 'success' && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-600 text-sm text-center">
-              Redirecting to sign in page in 3 seconds...
-            </p>
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mobile-container text-center">
+          <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+            <XCircle className="h-10 w-10 text-red-600" />
           </div>
-        )}
-
-        {status === 'form' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter your email address"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                  OTP Code
-                </label>
-                <input
-                  id="otp"
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
-                  placeholder="000000"
-                  maxLength={6}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Check the console for your 6-digit verification code
-                </p>
-              </div>
-
-              {message && (
-                <div className={`rounded-lg p-3 text-sm ${
-                  message.includes('sent') || message.includes('Success') 
-                    ? 'bg-green-50 text-green-600 border border-green-200'
-                    : 'bg-red-50 text-red-600 border border-red-200'
-                }`}>
-                  {message}
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={handleVerifyOTP}
-                disabled={!email || !otp || otp.length !== 6 || isVerifying}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isVerifying ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4" />
-                )}
-                {isVerifying ? 'Verifying...' : 'Verify OTP'}
-              </button>
-
-              <button
-                onClick={handleResendOTP}
-                disabled={!email || isResending}
-                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isResending ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4" />
-                )}
-                {isResending ? 'Sending...' : 'Resend OTP'}
-              </button>
-            </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Verification Failed</h1>
+          <div className="error-message mb-6">
+            {message}
           </div>
-        )}
-
-        {status === 'error' && (
-          <div className="space-y-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm text-center">
-                {message}
-              </p>
-            </div>
-
+          
+          <div className="space-y-3">
             <button
-              onClick={() => {
-                setStatus('form');
-                setMessage('');
-                setOtp('');
-              }}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              onClick={() => setStatus('form')}
+              className="btn-primary"
             >
               Try Again
             </button>
+            <Link href="/auth/signin" className="btn-secondary block text-center no-underline">
+              Back to Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="mobile-container">
+        {/* Logo and Title */}
+        <div className="text-center mb-8">
+          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+            <BookOpen className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Verify Your Email</h1>
+          <p className="text-slate-600">
+            We&rsquo;ve sent a 6-digit verification code to your email
+          </p>
+        </div>
+
+        {/* Instructions */}
+        <div className="card bg-blue-50 border-blue-200 mb-6">
+          <div className="flex items-start">
+            <div className="bg-blue-600 p-2 rounded-lg mr-3 mt-1">
+              <Mail className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-800 mb-1">Check Your Email</h3>
+              <p className="text-blue-700 text-sm">
+                Enter the 6-digit code we sent to your email address to complete verification.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error/Success Message */}
+        {message && (
+          <div className={`mb-6 ${
+            message.includes('sent') || message.includes('success') 
+              ? 'success-message' 
+              : 'error-message'
+          }`}>
+            {message}
           </div>
         )}
 
-        <div className="mt-6 text-center">
-          <Link
-            href="/auth/signin"
-            className="text-green-600 hover:text-green-800 font-medium"
+        {/* Verification Form */}
+        <div className="space-y-6">
+          <div>
+            <label className="form-label" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+              placeholder="Enter your email"
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div>
+            <label className="form-label" htmlFor="otp">
+              Verification Code
+            </label>
+            <input
+              id="otp"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              className="form-input text-center text-2xl font-mono tracking-widest"
+              placeholder="000000"
+              required
+              autoComplete="one-time-code"
+            />
+            <p className="text-sm text-slate-500 mt-2 text-center">
+              Enter the 6-digit code from your email
+            </p>
+          </div>
+
+          <button
+            onClick={handleVerifyOTP}
+            disabled={isVerifying || !email || !otp || otp.length !== 6}
+            className="btn-primary flex items-center justify-center"
           >
-            Back to Sign In
+            {isVerifying ? (
+              <>
+                <div className="loader w-5 h-5 mr-2"></div>
+                Verifying...
+              </>
+            ) : (
+              'Verify Email'
+            )}
+          </button>
+        </div>
+
+        {/* Resend Section */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-600 mb-4">Didn&rsquo;t receive the code?</p>
+          <button
+            onClick={handleResendOTP}
+            disabled={isResending || !email}
+            className="btn-secondary w-auto px-6 flex items-center justify-center mx-auto"
+          >
+            {isResending ? (
+              <>
+                <div className="loader w-4 h-4 mr-2"></div>
+                Sending...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Resend Code
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Back to Sign In */}
+        <div className="mt-8 text-center">
+          <Link 
+            href="/auth/signin" 
+            className="font-semibold text-blue-600 hover:text-blue-800 no-underline"
+          >
+            ← Back to Sign In
           </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-slate-400 text-sm">
+            Secure verification powered by TuitionTrack
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-export default function VerifyOTP() {
+export default function VerifyPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8 text-center">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center animate-pulse">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="mobile-container text-center">
+          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <BookOpen className="h-8 w-8 text-white" />
           </div>
-          <p className="text-white">Loading...</p>
+          <div className="loader-large"></div>
         </div>
       </div>
     }>

@@ -82,179 +82,184 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 w-full max-w-md sm:max-w-lg lg:max-w-xl relative overflow-hidden my-8 min-h-fit max-h-[90vh] overflow-y-auto">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-green-500/5 pointer-events-none"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between p-6 sm:p-8 border-b border-gray-200/50">
-            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-green-800 bg-clip-text text-transparent">
-              Add New Tuition
-            </h2>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-red-500 p-2 rounded-2xl hover:bg-red-50 transition-all duration-200 transform hover:scale-110"
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-slate-800">Add New Tuition</h2>
+          <button
+            onClick={handleClose}
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+            disabled={isLoading}
+            title="Close modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-message mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Subject */}
+          <div>
+            <label className="form-label" htmlFor="subject">
+              Subject *
+            </label>
+            <input
+              id="subject"
+              type="text"
+              value={formData.subject}
+              onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+              className="form-input"
+              placeholder="e.g. Mathematics, Physics"
+              required
               disabled={isLoading}
-              title="Close modal"
-            >
-              <X className="h-6 w-6 sm:h-7 sm:w-7" />
-            </button>
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-            {error && (
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/50 rounded-2xl p-4 mb-6 backdrop-blur-sm">
-                <p className="text-red-600 text-sm sm:text-base font-medium">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-6">
-              <div className="group">
-                <label htmlFor="studentName" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                  👤 Student Name
+          {/* Student Information (Optional) */}
+          <div className="bg-slate-50 p-4 rounded-xl">
+            <h3 className="form-label mb-3">Student Information (Optional)</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="form-label" htmlFor="studentName">
+                  Student Name
                 </label>
                 <input
                   id="studentName"
                   type="text"
                   value={formData.studentName}
-                  onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
-                  placeholder="Enter student's full name (optional)"
+                  onChange={(e) => setFormData(prev => ({ ...prev, studentName: e.target.value }))}
+                  className="form-input"
+                  placeholder="Student's full name"
                   disabled={isLoading}
                 />
-                <p className="text-xs sm:text-sm text-gray-500 mt-2">💡 Optional: Student&apos;s name for record keeping</p>
               </div>
 
-              <div className="group">
-                <label htmlFor="studentEmail" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                  📧 Student Email
+              <div>
+                <label className="form-label" htmlFor="studentEmail">
+                  Student Email
                 </label>
                 <input
                   id="studentEmail"
                   type="email"
                   value={formData.studentEmail}
-                  onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
-                  placeholder="student@example.com (optional - can be added later)"
+                  onChange={(e) => setFormData(prev => ({ ...prev, studentEmail: e.target.value }))}
+                  className="form-input"
+                  placeholder="student@example.com"
                   disabled={isLoading}
                 />
-                <p className="text-xs sm:text-sm text-gray-500 mt-2">💡 Optional: You can invite students to collaborate later</p>
               </div>
+            </div>
+          </div>
 
-              <div className="group">
-                <label htmlFor="subject" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                  📚 Subject *
+          {/* Time Schedule */}
+          <div>
+            <label className="form-label">Class Schedule *</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label text-sm" htmlFor="startTime">
+                  Start Time
                 </label>
                 <input
-                  id="subject"
-                  type="text"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base placeholder-gray-500 shadow-sm"
-                  placeholder="Mathematics, Physics, etc."
+                  id="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                  className="form-input"
                   required
                   disabled={isLoading}
                 />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="group">
-                  <label htmlFor="startTime" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                    🕐 Start Time *
-                  </label>
-                  <input
-                    id="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="group">
-                  <label htmlFor="endTime" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                    🕐 End Time *
-                  </label>
-                  <input
-                    id="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="group">
-                  <label htmlFor="daysPerWeek" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                    📅 Days Per Week
-                  </label>
-                  <input
-                    id="daysPerWeek"
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={formData.daysPerWeek}
-                    onChange={(e) => setFormData({ ...formData, daysPerWeek: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="group">
-                  <label htmlFor="plannedClassesPerMonth" className="block text-sm sm:text-base font-semibold text-gray-700 mb-3 group-focus-within:text-blue-600 transition-colors">
-                    📊 Classes Per Month
-                  </label>
-                  <input
-                    id="plannedClassesPerMonth"
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={formData.plannedClassesPerMonth}
-                    onChange={(e) => setFormData({ ...formData, plannedClassesPerMonth: parseInt(e.target.value) || 4 })}
-                    className="w-full px-4 sm:px-5 py-3 sm:py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white hover:border-gray-400 transition-all duration-300 text-base shadow-sm"
-                    disabled={isLoading}
-                  />
-                </div>
+              <div>
+                <label className="form-label text-sm" htmlFor="endTime">
+                  End Time
+                </label>
+                <input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                  className="form-input"
+                  required
+                  disabled={isLoading}
+                />
               </div>
             </div>
+          </div>
 
-            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 mt-8 sm:mt-10">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-6 sm:px-8 py-3 sm:py-4 text-gray-700 border-2 border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 font-semibold transition-all duration-200 transform hover:-translate-y-0.5"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="group px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]"
-                disabled={isLoading}
-              >
-                <span className="flex items-center justify-center gap-2">
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      Add Tuition
-                      <span className="group-hover:rotate-12 transition-transform duration-300">✨</span>
-                    </>
-                  )}
-                </span>
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Days per Week */}
+          <div>
+            <label className="form-label" htmlFor="daysPerWeek">
+              Days per Week *
+            </label>
+            <select
+              id="daysPerWeek"
+              value={formData.daysPerWeek}
+              onChange={(e) => setFormData(prev => ({ ...prev, daysPerWeek: parseInt(e.target.value) }))}
+              className="form-input"
+              required
+              disabled={isLoading}
+            >
+              {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                <option key={num} value={num}>
+                  {num} {num === 1 ? 'day' : 'days'} per week
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Planned Classes per Month */}
+          <div>
+            <label className="form-label" htmlFor="plannedClasses">
+              Planned Classes per Month *
+            </label>
+            <input
+              id="plannedClasses"
+              type="number"
+              min="1"
+              max="31"
+              value={formData.plannedClassesPerMonth}
+              onChange={(e) => setFormData(prev => ({ ...prev, plannedClassesPerMonth: parseInt(e.target.value) || 1 }))}
+              className="form-input"
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="btn-secondary flex-1"
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary flex-1 flex items-center justify-center"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="loader w-4 h-4 mr-2"></div>
+                  Adding...
+                </>
+              ) : (
+                'Add Tuition'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
