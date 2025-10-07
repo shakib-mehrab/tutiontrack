@@ -312,15 +312,8 @@ export default function TuitionDetailsPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="gradient-bg p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg animate-pulse">
-            <BookOpen className="h-10 w-10 text-white" />
-          </div>
-          <div className="card max-w-xs">
-            <p className="text-slate-800 text-lg font-medium mb-4">Loading tuition details...</p>
-            <div className="w-32 h-1 bg-slate-200 rounded-full mx-auto overflow-hidden">
-              <div className="h-full gradient-bg rounded-full animate-pulse"></div>
-            </div>
-          </div>
+          <div className="loader-large"></div>
+          <p className="text-slate-600 mt-4">Loading tuition details...</p>
         </div>
       </div>
     );

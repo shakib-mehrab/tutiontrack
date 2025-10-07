@@ -228,15 +228,6 @@ export default function TeacherDashboard() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="mobile-container text-center">
-          <div className="flex items-center justify-center mb-4">
-            <Image 
-              src="/icons/logo.svg" 
-              alt="TuitionTrack Logo" 
-              width={64}
-              height={64}
-              className="rounded-full"
-            />
-          </div>
           <div className="loader-large"></div>
           <p className="text-slate-600 mt-4">Loading dashboard...</p>
         </div>

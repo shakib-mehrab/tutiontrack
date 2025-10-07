@@ -253,10 +253,8 @@ export default function SignInPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="mobile-container text-center">
-          <div className="gradient-bg p-4 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <BookOpen className="h-8 w-8 text-white" />
-          </div>
           <div className="loader-large"></div>
+          <p className="text-slate-600 mt-4">Loading...</p>
         </div>
       </div>
     }>
