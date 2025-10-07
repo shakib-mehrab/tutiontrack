@@ -150,7 +150,7 @@ export default function StudentDashboard() {
             </div>
             <div>
               <h2 className="text-xl font-bold">Hello, {session?.user?.name}!</h2>
-              <p className="text-white/80">Ready to learn today?</p>
+              <p className="text-white/80">Your Progress Dashboard</p>
             </div>
           </div>
           

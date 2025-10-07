@@ -47,6 +47,8 @@ export default function TuitionDetailsPage() {
   const [selectedLogId, setSelectedLogId] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [downloadBeforeReset, setDownloadBeforeReset] = useState(true);
+  const [showEditStudentModal, setShowEditStudentModal] = useState(false);
+  const [editStudentName, setEditStudentName] = useState('');
 
   const fetchTuitionDetails = useCallback(async () => {
     try {
@@ -151,6 +153,36 @@ export default function TuitionDetailsPage() {
     } catch (error) {
       setError('Failed to add student');
       console.error('Error adding student:', error);
+    }
+  };
+
+  const handleEditStudentName = async () => {
+    if (!editStudentName.trim()) {
+      setError('Student name cannot be empty');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tuitions/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentName: editStudentName.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Student name updated successfully!');
+        setShowEditStudentModal(false);
+        setEditStudentName('');
+        await fetchTuitionDetails(); // Refresh details
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message || 'Failed to update student name');
+      }
+    } catch (error) {
+      setError('Failed to update student name');
+      console.error('Error updating student name:', error);
     }
   };
 
@@ -361,10 +393,11 @@ export default function TuitionDetailsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
-                {tuition.subject}
-                {tuition.studentName && ` - ${tuition.studentName}`}
+                {tuition.studentName ? tuition.studentName : 'Tuition Details'}
               </h1>
-              <p className="text-slate-600">Comprehensive tuition management & tracking</p>
+              <p className="text-slate-600 text-sm">
+                {tuition.currentMonthYear}
+              </p>
             </div>
             <button
               onClick={handleExportPDF}
@@ -403,6 +436,19 @@ export default function TuitionDetailsPage() {
               </h2>
               
               <div className="space-y-4">
+                {/* Subject Info */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="gradient-bg p-2 rounded-lg">
+                      <BookOpen className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-slate-600 text-sm">Subject</p>
+                      <p className="font-bold text-slate-800 text-lg">{tuition.subject}</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Teacher Info */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <div className="flex items-center gap-3">
@@ -419,17 +465,31 @@ export default function TuitionDetailsPage() {
                 {/* Student Info */}
                 {tuition.studentName ? (
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="gradient-bg p-2 rounded-lg">
-                        <User className="h-4 w-4 text-white" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="gradient-bg p-2 rounded-lg">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-slate-600 text-sm">Student</p>
+                          <p className="font-semibold text-slate-800">{tuition.studentName}</p>
+                          {tuition.studentEmail && (
+                            <p className="text-slate-500 text-sm">{tuition.studentEmail}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-slate-600 text-sm">Student</p>
-                        <p className="font-semibold text-slate-800">{tuition.studentName}</p>
-                        {tuition.studentEmail && (
-                          <p className="text-slate-500 text-sm">{tuition.studentEmail}</p>
-                        )}
-                      </div>
+                      {session?.user?.role === 'teacher' && (
+                        <button
+                          onClick={() => {
+                            setEditStudentName(tuition.studentName || '');
+                            setShowEditStudentModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2 py-1 hover:bg-blue-50 rounded transition-colors"
+                          title="Edit student name"
+                        >
+                          Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -749,6 +809,58 @@ export default function TuitionDetailsPage() {
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Add Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Student Name Modal */}
+      {showEditStudentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-md mx-4 animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Edit Student Name</h3>
+              <p className="text-slate-600 text-sm">Update the student name for this tuition</p>
+            </div>
+            
+            <div className="mb-6">
+              <label htmlFor="editStudentName" className="block text-sm font-semibold text-slate-800 mb-3">
+                Student Name
+              </label>
+              <input
+                id="editStudentName"
+                type="text"
+                value={editStudentName}
+                onChange={(e) => setEditStudentName(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200"
+                placeholder="Enter student name"
+              />
+              <p className="text-slate-500 text-xs mt-2 flex items-center gap-2">
+                <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
+                This will update the displayed student name
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowEditStudentModal(false);
+                  setEditStudentName('');
+                }}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditStudentName}
+                disabled={!editStudentName.trim()}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                Update Name
               </button>
             </div>
           </div>

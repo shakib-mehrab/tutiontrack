@@ -283,7 +283,7 @@ export default function TeacherDashboard() {
             </div>
             <div>
               <h2 className="text-xl font-bold">Welcome, {session?.user?.name}!</h2>
-              <p className="text-white/80">Ready to manage your classes today?</p>
+              <p className="text-white/80">Your Dashboard</p>
             </div>
           </div>
         </div>
@@ -373,10 +373,11 @@ export default function TeacherDashboard() {
                 <div key={tuition.id} className="card">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h4 className="font-bold text-slate-800 text-lg">{tuition.subject}</h4>
-                      <p className="text-slate-600">
+                      <h4 className=" font-bold text-slate-800">
                         {tuition.studentName || 'No student assigned'}
-                      </p>
+                      </h4>
+                      <p className=" text-slate-600 text-lg">{tuition.subject}</p>
+                      
                       <p className="text-sm text-slate-500">
                         {tuition.startTime} - {tuition.endTime} • {tuition.daysPerWeek} days/week
                       </p>
