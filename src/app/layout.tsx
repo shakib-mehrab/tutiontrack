@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     description: "Transform your teaching experience with our intelligent tuition tracking system.",
     images: [
       {
-        url: "/tutiontrack/public/icons/android-launchericon-512-512.png",
+        url: "/icon-512x512.png",
         width: 512,
         height: 512,
         alt: "TuitionTrack Logo",
@@ -62,16 +62,17 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TuitionTrack - Smart Tuition Management",
     description: "Transform your teaching experience with our intelligent tuition tracking system.",
-    images: ["/icons/icon-512x512.png"],
+    images: ["/icon-512x512.png"],
   },
   icons: {
     icon: [
-      { url: "/tutiontrack/public/icons/android-launchericon-192-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/tutiontrack/public/icons/android-launchericon-512-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/tutiontrack/public/icons/android-launchericon-152-152.png", sizes: "152x152", type: "image/png" },
-      { url: "/tutiontrack/public/icons/android-launchericon-192-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
 };
