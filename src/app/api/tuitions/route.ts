@@ -4,6 +4,39 @@ import { authOptions } from '@/lib/auth';
 import { createTuition, getTuitionsByTeacher, getTuitionsByStudent } from '@/lib/tuition-helpers';
 import { getUserByEmail } from '@/lib/auth-helpers';
 
+// Helper function to convert Firestore Timestamps to serializable format
+function serializeTimestamps(obj: unknown): unknown {
+  if (obj === null || obj === undefined) return obj;
+  
+  // Check if it's a Firestore Timestamp object
+  if (typeof obj === 'object' && obj !== null) {
+    const timestampObj = obj as Record<string, unknown>;
+    if (timestampObj._seconds !== undefined || (timestampObj.seconds !== undefined && timestampObj.nanoseconds !== undefined)) {
+      // This is a Firestore Timestamp
+      const seconds = (timestampObj._seconds || timestampObj.seconds) as number;
+      return new Date(seconds * 1000).toISOString();
+    }
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeTimestamps);
+  }
+  
+  if (typeof obj === 'object') {
+    const serialized: Record<string, unknown> = {};
+    for (const key in obj) {
+      serialized[key] = serializeTimestamps((obj as Record<string, unknown>)[key]);
+    }
+    return serialized;
+  }
+  
+  return obj;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -90,7 +123,10 @@ export async function GET() {
       tuitions = await getTuitionsByStudent(session.user.id);
     }
 
-    return NextResponse.json({ success: true, tuitions });
+    // Serialize timestamps before sending response
+    const serializedData = serializeTimestamps({ success: true, tuitions });
+
+    return NextResponse.json(serializedData);
   } catch (error) {
     console.error('Get tuitions API error:', error);
     return NextResponse.json(

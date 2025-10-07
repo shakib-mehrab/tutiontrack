@@ -275,15 +275,32 @@ export default function TuitionDetailsPage() {
   const formatDate = (timestamp: TimestampType) => {
     if (!timestamp) return 'N/A';
     
-    let date;
-    if (typeof timestamp === 'object' && 'seconds' in timestamp && timestamp.seconds) {
+    let date: Date;
+    
+    // Handle ISO string (from serialized API response)
+    if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    }
+    // Handle Firestore Timestamp object
+    else if (typeof timestamp === 'object' && 'seconds' in timestamp && timestamp.seconds) {
       date = new Date(timestamp.seconds * 1000);
-    } else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
+    } 
+    // Handle Firestore Timestamp with toDate method
+    else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
       date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
+    } 
+    // Handle Date object
+    else if (timestamp instanceof Date) {
       date = timestamp;
-    } else {
+    } 
+    // Fallback
+    else {
       date = new Date(timestamp as string | number);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
     }
     
     return date.toLocaleDateString('en-US', {
@@ -296,15 +313,32 @@ export default function TuitionDetailsPage() {
   const formatTime = (timestamp: TimestampType) => {
     if (!timestamp) return 'N/A';
     
-    let date;
-    if (typeof timestamp === 'object' && 'seconds' in timestamp && timestamp.seconds) {
+    let date: Date;
+    
+    // Handle ISO string (from serialized API response)
+    if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    }
+    // Handle Firestore Timestamp object
+    else if (typeof timestamp === 'object' && 'seconds' in timestamp && timestamp.seconds) {
       date = new Date(timestamp.seconds * 1000);
-    } else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
+    } 
+    // Handle Firestore Timestamp with toDate method
+    else if (typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate) {
       date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
+    } 
+    // Handle Date object
+    else if (timestamp instanceof Date) {
       date = timestamp;
-    } else {
+    } 
+    // Fallback
+    else {
       date = new Date(timestamp as string | number);
+    }
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Time';
     }
     
     return date.toLocaleTimeString('en-US', {
