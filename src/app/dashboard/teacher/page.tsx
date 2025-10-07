@@ -245,32 +245,36 @@ export default function TeacherDashboard() {
       <div className="app-header">
         <div className="mobile-container">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <Image 
                 src="/icons/logo.svg" 
                 alt="TuitionTrack Logo" 
-                width={70}
-                height={70}
-                className="rounded-lg mr-3"
+                width={40}
+                height={40}
+                className="rounded-lg shadow-sm"
               />
               <div>
-                <h1 className="text-lg font-bold text-slate-800">TuitionTrack</h1>
-                <p className="text-sm text-slate-500">Teacher Dashboard</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-slate-800 leading-tight">TuitionTrack</h1>
+                  <span className="role-badge">Teacher</span>
+                </div>
+                <p className="text-xs text-slate-500">{session?.user?.email}</p>
               </div>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
               title="Sign Out"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm font-medium hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mobile-container pb-8">
+      <div className="mobile-container main-content pb-8">
         {/* Welcome Section */}
         <div className="card gradient-bg text-white mb-6">
           <div className="flex items-center mb-4">

@@ -116,28 +116,32 @@ export default function StudentDashboard() {
       <div className="app-header">
         <div className="mobile-container">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="gradient-bg p-2 rounded-xl mr-3">
-                <GraduationCap className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="gradient-bg p-2 rounded-lg shadow-sm">
+                <GraduationCap className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-800">TuitionTrack</h1>
-                <p className="text-sm text-slate-500">Student Portal</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-slate-800 leading-tight">TuitionTrack</h1>
+                  <span className="role-badge">Student</span>
+                </div>
+                <p className="text-xs text-slate-500">{session?.user?.email}</p>
               </div>
             </div>
             <button
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
               title="Sign Out"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm font-medium hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mobile-container pb-8">
+      <div className="mobile-container main-content pb-8">
         {/* Welcome Section */}
         <div className="card gradient-bg text-white mb-6">
           <div className="flex items-center mb-4">

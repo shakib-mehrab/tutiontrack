@@ -129,6 +129,23 @@ body {
   box-sizing: border-box;
 }
 
+/* Main content padding for navbar */
+.main-content {
+  padding-top: 1rem;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Loading Spinner */
 .loader {
   width: 32px;
@@ -232,13 +249,36 @@ body {
 
 /* Header styles */
 .app-header {
-  background: var(--card-background);
-  border-bottom: 1px solid var(--border-color);
-  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  padding: 0.75rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.app-header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Role badge */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 0.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 /* Logo styles */
