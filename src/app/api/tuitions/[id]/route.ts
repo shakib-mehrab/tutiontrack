@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { Tuition } from '@/types';
 import { getClassLogs, getClassDates, deleteTuition } from '@/lib/tuition-helpers';
 
@@ -17,17 +16,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const resolvedParams = await params;
-    const tuitionRef = doc(db, 'tuitions', resolvedParams.id);
-    const tuitionDoc = await getDoc(tuitionRef);
+    
+    // Use Firebase Admin SDK for server-side operations
+    const adminDb = getAdminDb();
+    const tuitionDoc = await adminDb.collection('tuitions').doc(resolvedParams.id).get();
 
-    if (!tuitionDoc.exists()) {
+    if (!tuitionDoc.exists) {
       return NextResponse.json(
         { success: false, message: 'Tuition not found' },
         { status: 404 }
       );
     }
 
-    const tuition = tuitionDoc.data() as Tuition;
+    const tuition = { id: tuitionDoc.id, ...tuitionDoc.data() } as Tuition;
 
     // Check if user has access to this tuition
     if (tuition.teacherId !== session.user.id && tuition.studentId !== session.user.id) {
@@ -69,17 +70,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const resolvedParams = await params;
-    const tuitionRef = doc(db, 'tuitions', resolvedParams.id);
-    const tuitionDoc = await getDoc(tuitionRef);
+    
+    // Use Firebase Admin SDK for server-side operations
+    const adminDb = getAdminDb();
+    const tuitionDoc = await adminDb.collection('tuitions').doc(resolvedParams.id).get();
 
-    if (!tuitionDoc.exists()) {
+    if (!tuitionDoc.exists) {
       return NextResponse.json(
         { success: false, message: 'Tuition not found' },
         { status: 404 }
       );
     }
 
-    const tuition = tuitionDoc.data() as Tuition;
+    const tuition = { id: tuitionDoc.id, ...tuitionDoc.data() } as Tuition;
 
     // Check if the teacher owns this tuition
     if (tuition.teacherId !== session.user.id) {

@@ -6,7 +6,6 @@ import {
   getDocs, 
   query, 
   where, 
-  orderBy, 
   updateDoc, 
   deleteDoc,
   addDoc,
@@ -201,9 +200,13 @@ export async function addClassLog(logData: Omit<ClassLog, 'id' | 'date' | 'creat
 
 export async function getClassLogs(tuitionId: string): Promise<ClassLog[]> {
   try {
-    const logsRef = collection(db, 'classLogs');
-    const q = query(logsRef, where('tuitionId', '==', tuitionId), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    // Use Firebase Admin SDK for server-side API calls
+    const adminDb = getAdminDb();
+    const querySnapshot = await adminDb
+      .collection('classLogs')
+      .where('tuitionId', '==', tuitionId)
+      .orderBy('createdAt', 'desc')
+      .get();
     
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -217,14 +220,14 @@ export async function getClassLogs(tuitionId: string): Promise<ClassLog[]> {
 
 export async function getClassDates(tuitionId: string): Promise<ClassLog[]> {
   try {
-    const logsRef = collection(db, 'classLogs');
-    const q = query(
-      logsRef, 
-      where('tuitionId', '==', tuitionId),
-      where('actionType', '==', 'increment'),
-      orderBy('classDate', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
+    // Use Firebase Admin SDK for server-side API calls
+    const adminDb = getAdminDb();
+    const querySnapshot = await adminDb
+      .collection('classLogs')
+      .where('tuitionId', '==', tuitionId)
+      .where('actionType', '==', 'increment')
+      .orderBy('classDate', 'desc')
+      .get();
     
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
