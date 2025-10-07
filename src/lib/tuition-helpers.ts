@@ -47,11 +47,18 @@ export async function createTuition(tuitionData: Omit<Tuition, 'id' | 'createdAt
 
 export async function getTuitionsByTeacher(teacherId: string): Promise<Tuition[]> {
   try {
-    const tuitionsRef = collection(db, 'tuitions');
-    const q = query(tuitionsRef, where('teacherId', '==', teacherId), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    // Use Firebase Admin SDK for server-side API calls
+    const adminDb = getAdminDb();
+    const querySnapshot = await adminDb
+      .collection('tuitions')
+      .where('teacherId', '==', teacherId)
+      .orderBy('createdAt', 'desc')
+      .get();
     
-    return querySnapshot.docs.map(doc => doc.data() as Tuition);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Tuition));
   } catch (error) {
     console.error('Error fetching teacher tuitions:', error);
     return [];
@@ -60,11 +67,18 @@ export async function getTuitionsByTeacher(teacherId: string): Promise<Tuition[]
 
 export async function getTuitionsByStudent(studentId: string): Promise<Tuition[]> {
   try {
-    const tuitionsRef = collection(db, 'tuitions');
-    const q = query(tuitionsRef, where('studentId', '==', studentId), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    // Use Firebase Admin SDK for server-side API calls
+    const adminDb = getAdminDb();
+    const querySnapshot = await adminDb
+      .collection('tuitions')
+      .where('studentId', '==', studentId)
+      .orderBy('createdAt', 'desc')
+      .get();
     
-    return querySnapshot.docs.map(doc => doc.data() as Tuition);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Tuition));
   } catch (error) {
     console.error('Error fetching student tuitions:', error);
     return [];
