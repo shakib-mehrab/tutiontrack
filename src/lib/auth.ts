@@ -82,18 +82,36 @@ const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
+      // On sign in, add user role to token
       if (user) {
         token.role = user.role;
+        token.id = user.id;
       }
+      
+      // On subsequent requests, ensure role persists
+      // If token doesn't have role but has sub, fetch from Firestore
+      if (!token.role && token.sub) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', token.sub));
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as User;
+            token.role = userData.role;
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.sub!;
-        session.user.role = token.role;
+        session.user.role = token.role as 'teacher' | 'student';
       }
       return session;
     },

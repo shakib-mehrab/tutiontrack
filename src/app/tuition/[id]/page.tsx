@@ -657,25 +657,22 @@ export default function TuitionDetailsPage() {
                     logs.map((log) => {
                       const isIncrement = log.actionType === 'increment';
                       const isDecrement = log.actionType === 'decrement';
-                      const gradientClass = isIncrement ? 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20' :
-                                           isDecrement ? 'from-red-500/10 to-pink-500/10 border-red-500/20' :
-                                           'from-blue-500/10 to-purple-500/10 border-blue-500/20';
-                      const hoverGradient = isIncrement ? 'hover:from-emerald-500/20 hover:to-teal-500/20' :
-                                           isDecrement ? 'hover:from-red-500/20 hover:to-pink-500/20' :
-                                           'hover:from-blue-500/20 hover:to-purple-500/20';
-                      const textColor = isIncrement ? 'text-emerald-200' :
-                                       isDecrement ? 'text-red-200' :
-                                       'text-blue-200';
-                      const badgeColor = isIncrement ? 'bg-emerald-500/20 text-emerald-300' :
-                                        isDecrement ? 'bg-red-500/20 text-red-300' :
-                                        'bg-blue-500/20 text-blue-300';
+                      const bgColor = isIncrement ? 'bg-green-50 border-green-200 hover:bg-green-100' :
+                                      isDecrement ? 'bg-red-50 border-red-200 hover:bg-red-100' :
+                                      'bg-blue-50 border-blue-200 hover:bg-blue-100';
+                      const badgeColor = isIncrement ? 'bg-green-100 text-green-800' :
+                                         isDecrement ? 'bg-red-100 text-red-800' :
+                                         'bg-blue-100 text-blue-800';
+                      const dotColor = isIncrement ? 'bg-green-500' :
+                                      isDecrement ? 'bg-red-500' :
+                                      'bg-blue-500';
                       
                       return (
-                        <div key={log.id} className={`bg-gradient-to-r ${gradientClass} border rounded-xl p-4 ${hoverGradient} transition-all duration-200`}>
+                        <div key={log.id} className={`${bgColor} border rounded-xl p-4 transition-all duration-200`}>
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${isIncrement ? 'bg-emerald-400' : isDecrement ? 'bg-red-400' : 'bg-blue-400'}`}></div>
-                              <p className={`font-semibold ${textColor}`}>
+                              <div className={`w-2 h-2 ${dotColor} rounded-full`}></div>
+                              <p className="font-semibold text-slate-800">
                                 {isIncrement ? 'Class Added' :
                                  isDecrement ? 'Class Removed' :
                                  'Manual Action'}
@@ -685,11 +682,12 @@ export default function TuitionDetailsPage() {
                               {formatDate(log.date)}
                             </div>
                           </div>
-                          <p className="text-white/60 text-sm mb-1">
-                            by <span className="text-white font-medium">{log.addedByName}</span>
+                          <p className="text-slate-600 text-sm">
+                            Added by <span className="text-slate-800 font-medium">{log.addedByName}</span>
+                            {log.classDate && ` at ${formatTime(log.date)}`}
                           </p>
                           {log.description && (
-                            <p className="text-white/50 text-sm mt-2 italic">
+                            <p className="text-slate-500 text-sm mt-2 italic">
                               {log.description}
                             </p>
                           )}
@@ -698,10 +696,10 @@ export default function TuitionDetailsPage() {
                     })
                   ) : (
                     <div className="text-center py-12">
-                      <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-8 border border-blue-500/30">
-                        <Clock className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-                        <p className="text-white/60 text-lg">No activity recorded yet</p>
-                        <p className="text-white/40 text-sm mt-2">Activity will appear here as you manage classes</p>
+                      <div className="bg-slate-50 rounded-2xl p-8 border border-slate-200">
+                        <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 text-lg">No activity recorded yet</p>
+                        <p className="text-slate-500 text-sm mt-2">Activity will appear here as you manage classes</p>
                       </div>
                     </div>
                   )}
