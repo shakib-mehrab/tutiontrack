@@ -35,21 +35,41 @@ function SignInContent() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: '/dashboard'
+        redirect: false, // Don't redirect automatically, handle it manually
       });
 
       if (result?.error) {
-        if (result.error.includes('verify')) {
-          setError('Please verify your email before signing in.');
-          setShowResendVerification(true);
-        } else {
-          setError('Invalid email or password.');
+        // Handle different error types
+        switch (result.error) {
+          case 'UNVERIFIED_EMAIL':
+            setError('Please verify your email before signing in.');
+            setShowResendVerification(true);
+            break;
+          case 'INVALID_CREDENTIALS':
+            setError('Invalid email or password. Please check your credentials and try again.');
+            break;
+          case 'USER_NOT_FOUND':
+            setError('No account found with this email. Please register first.');
+            break;
+          case 'INVALID_EMAIL':
+            setError('Please enter a valid email address.');
+            break;
+          case 'TOO_MANY_REQUESTS':
+            setError('Too many failed attempts. Please try again later.');
+            break;
+          case 'CredentialsSignin':
+            setError('Invalid email or password. Please try again.');
+            break;
+          default:
+            setError('An error occurred during sign in. Please try again.');
         }
+      } else if (result?.ok) {
+        // Successful sign in - redirect to dashboard
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      setError('An error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }

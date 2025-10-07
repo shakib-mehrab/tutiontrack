@@ -15,7 +15,7 @@ const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error('Email and password are required');
         }
 
         try {
@@ -30,14 +30,14 @@ const authOptions: NextAuthOptions = {
 
           // Check if email is verified
           if (!firebaseUser.emailVerified) {
-            throw new Error('Please verify your email before signing in');
+            throw new Error('UNVERIFIED_EMAIL');
           }
 
           // Get user data from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           
           if (!userDoc.exists()) {
-            throw new Error('User profile not found');
+            throw new Error('USER_NOT_FOUND');
           }
 
           const userData = userDoc.data() as User;
@@ -48,9 +48,34 @@ const authOptions: NextAuthOptions = {
             name: userData.name,
             role: userData.role,
           };
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Auth error:', error);
-          return null;
+          
+          // Re-throw custom errors
+          if (error instanceof Error) {
+            if (error.message === 'UNVERIFIED_EMAIL' || error.message === 'USER_NOT_FOUND') {
+              throw error;
+            }
+          }
+          
+          // Handle Firebase auth errors
+          const firebaseError = error as { code?: string; message?: string };
+          if (firebaseError.code === 'auth/invalid-credential' || 
+              firebaseError.code === 'auth/wrong-password' || 
+              firebaseError.code === 'auth/user-not-found') {
+            throw new Error('INVALID_CREDENTIALS');
+          }
+          
+          if (firebaseError.code === 'auth/invalid-email') {
+            throw new Error('INVALID_EMAIL');
+          }
+          
+          if (firebaseError.code === 'auth/too-many-requests') {
+            throw new Error('TOO_MANY_REQUESTS');
+          }
+          
+          // Generic error for unknown issues
+          throw new Error('AUTH_ERROR');
         }
       },
     }),
@@ -99,7 +124,6 @@ const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    error: '/auth/error',
     signOut: '/auth/signin',
   },
 };
