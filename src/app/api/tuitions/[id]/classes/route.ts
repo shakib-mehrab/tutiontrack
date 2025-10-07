@@ -14,6 +14,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
+    // Only teachers can modify class counts
+    if (session.user.role !== 'teacher') {
+      console.error('Student attempted to modify class count:', session.user.id);
+      return NextResponse.json(
+        { success: false, message: 'Access denied. Only teachers can modify class counts.' },
+        { status: 403 }
+      );
+    }
+
     const resolvedParams = await params;
     const body = await request.json();
     const { action, classDate } = body;

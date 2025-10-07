@@ -31,7 +31,7 @@ type TimestampType = {
 } | string | Date;
 
 export default function TuitionDetailsPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const [details, setDetails] = useState<TuitionDetails | null>(null);
@@ -505,35 +505,37 @@ export default function TuitionDetailsPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
-                  <h3 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
-                    <div className="w-2 h-2 gradient-bg rounded-full"></div>
-                    Quick Actions
-                  </h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => setShowDateModal(true)}
-                      className="btn-primary w-full flex items-center justify-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Class
-                    </button>
-                    <button
-                      onClick={() => handleClassUpdate('decrement')}
-                      className="btn-secondary w-full flex items-center justify-center gap-2"
-                    >
-                      <Minus className="h-4 w-4" />
-                      Remove Class
-                    </button>
-                    <button
-                      onClick={() => handleClassUpdate('reset')}
-                      className="btn-secondary w-full flex items-center justify-center gap-2"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      Reset Count
-                    </button>
+                {session?.user?.role === 'teacher' && (
+                  <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                    <h3 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
+                      <div className="w-2 h-2 gradient-bg rounded-full"></div>
+                      Quick Actions
+                    </h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => setShowDateModal(true)}
+                        className="btn-primary w-full flex items-center justify-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Class
+                      </button>
+                      <button
+                        onClick={() => handleClassUpdate('decrement')}
+                        className="btn-secondary w-full flex items-center justify-center gap-2"
+                      >
+                        <Minus className="h-4 w-4" />
+                        Remove Class
+                      </button>
+                      <button
+                        onClick={() => handleClassUpdate('reset')}
+                        className="btn-secondary w-full flex items-center justify-center gap-2"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Reset Count
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
