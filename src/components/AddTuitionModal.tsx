@@ -82,7 +82,7 @@ export function AddTuitionModal({ isOpen, onClose, onSubmit, isLoading = false }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
       <div className="card w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

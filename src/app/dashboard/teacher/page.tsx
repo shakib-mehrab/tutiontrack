@@ -619,7 +619,7 @@ export default function TeacherDashboard() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
           <div className="card w-full max-w-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Tuition?</h3>
             <p className="text-slate-600 mb-4">
@@ -655,7 +655,7 @@ export default function TeacherDashboard() {
 
       {/* Add Class Modal */}
       {showDateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="card w-full max-w-md mx-4 animate-fade-in">
             <div className="text-center mb-6">
               <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -706,7 +706,7 @@ export default function TeacherDashboard() {
 
       {/* Add Student Modal */}
       {showStudentModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="card w-full max-w-md mx-4 animate-fade-in">
             <div className="text-center mb-6">
               <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -758,7 +758,7 @@ export default function TeacherDashboard() {
 
       {/* Delete Class Modal */}
       {showDeleteClassModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="card w-full max-w-lg mx-4 animate-fade-in">
             <div className="text-center mb-6">
               <div className="bg-gradient-to-r from-red-500 to-pink-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -873,7 +873,7 @@ export default function TeacherDashboard() {
 
       {/* Reset Confirmation Modal */}
       {showResetModal && tuitionToReset && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="card w-full max-w-lg mx-4 animate-fade-in">
             <div className="text-center mb-6">
               <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
