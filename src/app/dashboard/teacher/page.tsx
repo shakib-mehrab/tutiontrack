@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { ProgressBar } from '@/components/ProgressBar';
 import { AddTuitionModal } from '@/components/AddTuitionModal';
-import { Tuition } from '@/types';
+import { Tuition, ClassLog } from '@/types';
 
 interface TuitionFormData {
   studentEmail?: string;
@@ -49,6 +49,10 @@ export default function TeacherDashboard() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [tuitionToReset, setTuitionToReset] = useState<Tuition | null>(null);
   const [downloadBeforeReset, setDownloadBeforeReset] = useState(true);
+  const [showDeleteClassModal, setShowDeleteClassModal] = useState(false);
+  const [availableClassLogs, setAvailableClassLogs] = useState<ClassLog[]>([]);
+  const [selectedLogId, setSelectedLogId] = useState('');
+  const [tuitionForClassDeletion, setTuitionForClassDeletion] = useState<string>('');
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -155,6 +159,14 @@ export default function TeacherDashboard() {
           setTuitionToReset(tuition);
           setShowResetModal(true);
         }
+        return;
+      }
+
+      // Show delete class modal for decrement
+      if (action === 'decrement') {
+        await fetchClassLogsForDeletion(tuitionId);
+        setTuitionForClassDeletion(tuitionId);
+        setShowDeleteClassModal(true);
         return;
       }
 
@@ -288,6 +300,72 @@ export default function TeacherDashboard() {
     } catch (error) {
       setError('Failed to reset class count');
       console.error('Error resetting classes:', error);
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const fetchClassLogsForDeletion = async (tuitionId: string) => {
+    try {
+      const response = await fetch(`/api/tuitions/${tuitionId}/logs`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Filter only increment logs (actual classes) and sort by date
+        const incrementLogs = data.logs
+          .filter((log: ClassLog) => log.actionType === 'increment')
+          .sort((a: ClassLog, b: ClassLog) => {
+            const dateA = a.classDate || a.date;
+            const dateB = b.classDate || b.date;
+            
+            // Handle ISO string dates from serialized API response
+            const timeA = typeof dateA === 'string'
+              ? new Date(dateA).getTime()
+              : dateA && typeof dateA === 'object' && 'seconds' in dateA 
+              ? (dateA as { seconds: number }).seconds * 1000
+              : new Date(dateA as Date).getTime();
+            
+            const timeB = typeof dateB === 'string'
+              ? new Date(dateB).getTime()
+              : dateB && typeof dateB === 'object' && 'seconds' in dateB 
+              ? (dateB as { seconds: number }).seconds * 1000
+              : new Date(dateB as Date).getTime();
+            
+            return timeB - timeA; // Most recent first
+          });
+        
+        setAvailableClassLogs(incrementLogs);
+      }
+    } catch (error) {
+      console.error('Error fetching class logs:', error);
+      setError('Failed to load class logs');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDeleteClass = async () => {
+    if (!selectedLogId || !tuitionForClassDeletion) return;
+
+    try {
+      const response = await fetch(`/api/tuitions/${tuitionForClassDeletion}/logs/${selectedLogId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Class deleted successfully');
+        setShowDeleteClassModal(false);
+        setSelectedLogId('');
+        setTuitionForClassDeletion('');
+        await fetchTuitions(); // Refresh the list
+        setTimeout(() => setSuccess(''), 2000);
+      } else {
+        setError(data.message || 'Failed to delete class');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (error) {
+      setError('Failed to delete class');
+      console.error('Error deleting class:', error);
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -672,6 +750,121 @@ export default function TeacherDashboard() {
                 className="btn-primary flex-1"
               >
                 Add Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Class Modal */}
+      {showDeleteClassModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-lg mx-4 animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Minus className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Select Class to Delete</h3>
+              <p className="text-slate-600 text-sm">Choose which class record to remove</p>
+            </div>
+            
+            <div className="mb-6">
+              <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
+                {availableClassLogs.length > 0 ? (
+                  availableClassLogs.map((log) => {
+                    const classDate = log.classDate || log.date;
+                    let dateStr = 'Unknown Date';
+                    
+                    try {
+                      if (typeof classDate === 'string') {
+                        dateStr = new Date(classDate).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } else if (classDate && typeof classDate === 'object' && 'seconds' in classDate) {
+                        const timestamp = (classDate as { seconds: number }).seconds * 1000;
+                        dateStr = new Date(timestamp).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } else if (classDate && typeof classDate === 'object' && 'toDate' in classDate) {
+                        const dateObj = (classDate as { toDate: () => Date }).toDate();
+                        dateStr = dateObj.toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      } else {
+                        dateStr = new Date(classDate as Date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      }
+                    } catch {
+                      dateStr = 'Invalid Date';
+                    }
+                    
+                    return (
+                      <label
+                        key={log.id}
+                        className={`flex items-center p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                          selectedLogId === log.id
+                            ? 'bg-red-50 border-red-300 scale-[1.02]'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="classLog"
+                          value={log.id}
+                          checked={selectedLogId === log.id}
+                          onChange={(e) => setSelectedLogId(e.target.value)}
+                          className="w-4 h-4 text-red-500 bg-white border-slate-300 focus:ring-red-500/20 focus:ring-2"
+                        />
+                        <div className="ml-3 flex-1">
+                          <p className="font-semibold text-slate-800">{dateStr}</p>
+                          <p className="text-slate-600 text-sm">Added by {log.addedByName}</p>
+                        </div>
+                        {selectedLogId === log.id && (
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        )}
+                      </label>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                      <p className="text-slate-600">No class records found</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteClassModal(false);
+                  setSelectedLogId('');
+                  setTuitionForClassDeletion('');
+                }}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteClass}
+                disabled={!selectedLogId}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                Delete Class
               </button>
             </div>
           </div>

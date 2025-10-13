@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { Tuition, ClassLog } from '@/types';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; logId: string }> }) {
@@ -18,11 +17,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const resolvedParams = await params;
     const { id: tuitionId, logId } = resolvedParams;
 
+    // Use Admin SDK for server-side operations
+    const adminDb = getAdminDb();
+
     // Check if tuition exists and user is the teacher
-    const tuitionRef = doc(db, 'tuitions', tuitionId);
-    const tuitionDoc = await getDoc(tuitionRef);
+    const tuitionDoc = await adminDb.collection('tuitions').doc(tuitionId).get();
     
-    if (!tuitionDoc.exists()) {
+    if (!tuitionDoc.exists) {
       return NextResponse.json(
         { success: false, message: 'Tuition not found' },
         { status: 404 }
@@ -39,10 +40,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Check if class log exists
-    const logRef = doc(db, 'classLogs', logId);
-    const logDoc = await getDoc(logRef);
+    const logDoc = await adminDb.collection('classLogs').doc(logId).get();
     
-    if (!logDoc.exists()) {
+    if (!logDoc.exists) {
       return NextResponse.json(
         { success: false, message: 'Class log not found' },
         { status: 404 }
@@ -68,11 +68,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Delete the class log
-    await deleteDoc(logRef);
+    await adminDb.collection('classLogs').doc(logId).delete();
 
     // Update tuition class count (decrement by 1)
     const newTakenClasses = Math.max(0, tuition.takenClasses - 1);
-    await updateDoc(tuitionRef, {
+    await adminDb.collection('tuitions').doc(tuitionId).update({
       takenClasses: newTakenClasses,
       updatedAt: new Date(),
     });
