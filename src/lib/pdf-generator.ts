@@ -13,36 +13,75 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
   const pageWidth = pdf.internal.pageSize.getWidth();
   let yPosition = 20;
 
-  // Header
+  // Header with background
+  pdf.setFillColor(59, 130, 246); // Blue background
+  pdf.rect(0, 10, pageWidth, 20, 'F');
   pdf.setFontSize(20);
-  pdf.setTextColor(40);
-  pdf.text('TuitionTrack - Class Report', pageWidth / 2, yPosition, { align: 'center' });
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(255, 255, 255); // White text
+  pdf.text('TuitionTrack - Monthly Class Report', pageWidth / 2, yPosition + 3, { align: 'center' });
   
-  yPosition += 20;
+  yPosition += 25;
 
-  // Tuition Details
+  // Tuition Details heading with background
+  pdf.setFillColor(229, 231, 235); // Light gray background
+  pdf.rect(15, yPosition - 8, pageWidth - 30, 12, 'F');
   pdf.setFontSize(16);
+  pdf.setFont(undefined, 'bold');
   pdf.setTextColor(0);
   pdf.text('Tuition Details', 20, yPosition);
   
   yPosition += 10;
-  pdf.setFontSize(12);
+  pdf.setFontSize(11);
+  pdf.setFont(undefined, 'normal');
   
-  const details = [
-    `Subject: ${tuition.subject}`,
-    `Student: ${tuition.studentName}`,
-    `Teacher: ${tuition.teacherName}`,
-    `Schedule: ${tuition.startTime} - ${tuition.endTime}`,
-    `Days per Week: ${tuition.daysPerWeek}`,
-    `Planned Classes: ${tuition.plannedClassesPerMonth}`,
-    `Classes Completed: ${tuition.takenClasses}`,
-    `Progress: ${Math.round((tuition.takenClasses / tuition.plannedClassesPerMonth) * 100)}%`,
+  // Regular details
+  const regularDetails = [
+    { label: 'Subject', value: tuition.subject },
+    { label: 'Student', value: tuition.studentName },
+    { label: 'Teacher', value: tuition.teacherName },
+    { label: 'Schedule', value: `${tuition.startTime} - ${tuition.endTime}` },
+    { label: 'Days per Week', value: tuition.daysPerWeek.toString() },
+    { label: 'Planned Classes', value: tuition.plannedClassesPerMonth.toString() },
   ];
 
-  details.forEach(detail => {
-    yPosition += 8;
-    pdf.text(detail, 25, yPosition);
+  regularDetails.forEach(detail => {
+    yPosition += 7;
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(0);
+    pdf.text(`${detail.label}: ${detail.value}`, 25, yPosition);
   });
+
+  yPosition += 8;
+
+  // Highlighted details with bold labels and values
+  const highlightedDetails = [
+    { label: 'Classes Completed', value: tuition.takenClasses.toString(), color: [220, 252, 231] }, // Light green
+    { label: 'Progress', value: `${Math.round((tuition.takenClasses / tuition.plannedClassesPerMonth) * 100)}%`, color: [219, 234, 254] }, // Light blue
+  ];
+
+  highlightedDetails.forEach(detail => {
+    yPosition += 9;
+    // Background box
+    pdf.setFillColor(detail.color[0], detail.color[1], detail.color[2]);
+    pdf.rect(20, yPosition - 6, pageWidth - 40, 10, 'F');
+    
+    // Bold label and value
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(0);
+    pdf.text(`${detail.label}: ${detail.value}`, 25, yPosition);
+  });
+
+  yPosition += 10;
+
+  // Payment Received status with special formatting
+  pdf.setFillColor(254, 226, 226); // Light red background
+  pdf.rect(20, yPosition - 6, pageWidth - 40, 10, 'F');
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(0);
+  pdf.text('Payment Received: ', 25, yPosition);
+  pdf.setTextColor(220, 38, 38); // Red text for "No"
+  pdf.text('No', 25 + pdf.getTextWidth('Payment Received: '), yPosition);
 
   yPosition += 20;
 
@@ -81,7 +120,12 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
 
   // Complete Class Log Table
   if (sortedClassDates && sortedClassDates.length > 0) {
+    // Heading with background
+    pdf.setFillColor(229, 231, 235); // Light gray background
+    pdf.rect(15, yPosition - 8, pageWidth - 30, 12, 'F');
     pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(0);
     pdf.text('Complete Class Log', 20, yPosition);
     
     yPosition += 15;
@@ -100,7 +144,7 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
     pdf.text('Date', 65, yPosition);
     pdf.text('Day of Week', 110, yPosition);
     pdf.text('Time Added', 150, yPosition);
-    pdf.text('Added By', 180, yPosition);
+    // pdf.text('Added By', 180, yPosition);
     
     yPosition += 5;
     pdf.line(20, yPosition, pageWidth - 20, yPosition);
@@ -164,7 +208,7 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
       pdf.text(date, 65, yPosition);
       pdf.text(dayOfWeek, 110, yPosition);
       pdf.text(timeAdded, 150, yPosition);
-      pdf.text(log.addedByName.substring(0, 15), 180, yPosition); // Truncate long names
+      // pdf.text(log.addedByName.substring(0, 15), 180, yPosition); // Truncate long names
       
       yPosition += 12;
       
@@ -172,6 +216,15 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
       if (yPosition > 270) {
         pdf.addPage();
         yPosition = 30;
+        
+        // Repeat heading on new page
+        pdf.setFillColor(229, 231, 235);
+        pdf.rect(15, yPosition - 8, pageWidth - 30, 12, 'F');
+        pdf.setFontSize(16);
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(0);
+        pdf.text('Complete Class Log (continued)', 20, yPosition);
+        yPosition += 15;
         
         // Repeat headers on new page
         pdf.setFontSize(10);
@@ -183,7 +236,7 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
         pdf.text('Date', 65, yPosition);
         pdf.text('Day of Week', 110, yPosition);
         pdf.text('Time Added', 150, yPosition);
-        pdf.text('Added By', 180, yPosition);
+        // pdf.text('Added By', 180, yPosition);
         yPosition += 5;
         pdf.line(20, yPosition, pageWidth - 20, yPosition);
         yPosition += 10;
@@ -193,16 +246,23 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
 
     yPosition += 15;
     
-    // Summary section
+    // Summary section heading with background
+    pdf.setFillColor(229, 231, 235); // Light gray background
+    pdf.rect(15, yPosition - 8, pageWidth - 30, 12, 'F');
     pdf.setFontSize(12);
     pdf.setFont(undefined, 'bold');
-    pdf.text('Summary:', 20, yPosition);
-    yPosition += 10;
+    pdf.setTextColor(0);
+    pdf.text('Summary', 20, yPosition);
+    yPosition += 15;
     
-    pdf.setFont(undefined, 'normal');
-    pdf.setFontSize(10);
+    // Total Classes Conducted - highlighted with bold
+    pdf.setFillColor(254, 249, 195); // Light yellow background
+    pdf.rect(20, yPosition - 6, pageWidth - 40, 10, 'F');
+    pdf.setFont(undefined, 'bold');
+    pdf.setFontSize(11);
+    pdf.setTextColor(0);
     pdf.text(`Total Classes Conducted: ${sortedClassDates.length}`, 25, yPosition);
-    yPosition += 8;
+    yPosition += 12;
     
     if (sortedClassDates.length > 0) {
       const firstClass = sortedClassDates[0].classDate || sortedClassDates[0].date;
@@ -227,6 +287,10 @@ export function generateTuitionPDF({ tuition, logs }: PDFExportOptions) {
           lastDate = new Date(lastClass as string | number | Date).toLocaleDateString();
         }
         
+        // Period - highlighted with bold
+        pdf.setFillColor(232, 222, 248); // Light purple background
+        pdf.rect(20, yPosition - 6, pageWidth - 40, 10, 'F');
+        pdf.setFont(undefined, 'bold');
         pdf.text(`Period: ${firstDate} to ${lastDate}`, 25, yPosition);
       } catch {
         // Skip period display if dates are invalid
