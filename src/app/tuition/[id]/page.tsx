@@ -1009,51 +1009,51 @@ export default function TuitionDetailsPage() {
       {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 w-full max-w-lg mx-4 animate-in zoom-in duration-200">
+          <div className="card w-full max-w-lg mx-4 animate-fade-in">
             <div className="text-center mb-6">
               <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <RotateCcw className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Reset Class Count</h3>
-              <p className="text-white/60 text-sm">This action cannot be undone</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Reset Class Count</h3>
+              <p className="text-slate-600 text-sm">This action cannot be undone</p>
             </div>
             
             <div className="mb-6">
-              <p className="text-white/80 mb-4 text-center">
+              <p className="text-slate-700 mb-4 text-center">
                 This will permanently delete all class records and reset the count to 0.
               </p>
               
-              <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl p-5 mb-6">
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-xl p-5 mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="text-2xl">⚠️</div>
-                  <p className="text-amber-200 font-semibold">Critical Warning</p>
+                  <p className="text-amber-800 font-semibold">Critical Warning</p>
                 </div>
-                <ul className="text-amber-100 space-y-2 text-sm">
+                <ul className="text-amber-700 space-y-2 text-sm">
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
                     All class attendance records will be permanently deleted
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
                     Class count will reset to 0
                   </li>
                   <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
                     This action cannot be undone
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-white/5 rounded-xl p-4 border border-white/20">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     id="downloadPdf"
                     checked={downloadBeforeReset}
                     onChange={(e) => setDownloadBeforeReset(e.target.checked)}
-                    className="w-4 h-4 text-blue-500 bg-transparent border-white/30 rounded focus:ring-blue-500/20 focus:ring-2"
+                    className="w-4 h-4 text-blue-500 bg-white border-slate-300 rounded focus:ring-blue-500/20 focus:ring-2"
                   />
-                  <span className="text-white/80 text-sm group-hover:text-white transition-colors">
+                  <span className="text-slate-700 text-sm group-hover:text-slate-900 transition-colors">
                     Download PDF report before reset
                   </span>
                 </label>
@@ -1063,7 +1063,7 @@ export default function TuitionDetailsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowResetModal(false)}
-                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-all duration-200 border border-white/20"
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-all duration-200"
               >
                 Cancel
               </button>

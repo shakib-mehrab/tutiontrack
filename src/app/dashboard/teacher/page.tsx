@@ -46,6 +46,9 @@ export default function TeacherDashboard() {
   const [selectedDate, setSelectedDate] = useState('');
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [studentEmail, setStudentEmail] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [tuitionToReset, setTuitionToReset] = useState<Tuition | null>(null);
+  const [downloadBeforeReset, setDownloadBeforeReset] = useState(true);
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -145,6 +148,16 @@ export default function TeacherDashboard() {
 
   const handleClassUpdate = async (tuitionId: string, action: 'increment' | 'decrement' | 'reset', classDate?: string) => {
     try {
+      // Show reset confirmation modal
+      if (action === 'reset') {
+        const tuition = tuitions.find(t => t.id === tuitionId);
+        if (tuition) {
+          setTuitionToReset(tuition);
+          setShowResetModal(true);
+        }
+        return;
+      }
+
       const body: { action: string; classDate?: string } = { action };
       if (classDate) {
         body.classDate = classDate;
@@ -222,6 +235,61 @@ export default function TeacherDashboard() {
   const handleAddStudentToTuition = (tuitionId: string) => {
     setSelectedTuitionId(tuitionId);
     setShowStudentModal(true);
+  };
+
+  const handleExportPDF = async (tuition: Tuition) => {
+    try {
+      // Fetch logs for this tuition
+      const response = await fetch(`/api/tuitions/${tuition.id}/logs`);
+      const data = await response.json();
+      
+      // Dynamically import PDF generator
+      const { downloadTuitionPDF } = await import('@/lib/pdf-generator');
+      
+      downloadTuitionPDF({
+        tuition,
+        logs: data.success ? data.logs : [],
+        month: tuition.currentMonthYear,
+      });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      setError('Failed to export PDF');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!tuitionToReset) return;
+
+    try {
+      // Download PDF before reset if requested
+      if (downloadBeforeReset) {
+        await handleExportPDF(tuitionToReset);
+      }
+
+      const response = await fetch(`/api/tuitions/${tuitionToReset.id}/classes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess('Class count reset successfully! All class records have been cleared.');
+        setShowResetModal(false);
+        setTuitionToReset(null);
+        await fetchTuitions(); // Refresh the list
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.message || 'Failed to reset class count');
+        setTimeout(() => setError(''), 3000);
+      }
+    } catch (error) {
+      setError('Failed to reset class count');
+      console.error('Error resetting classes:', error);
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   if (status === 'loading' || isLoading) {
@@ -604,6 +672,80 @@ export default function TeacherDashboard() {
                 className="btn-primary flex-1"
               >
                 Add Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetModal && tuitionToReset && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-lg mx-4 animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <RotateCcw className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Reset Class Count</h3>
+              <p className="text-slate-600 text-sm">This action cannot be undone</p>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-slate-700 mb-4 text-center">
+                This will permanently delete all class records for <span className="font-semibold">{tuitionToReset.studentName || 'this tuition'}</span> and reset the count to 0.
+              </p>
+              
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-xl p-5 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-2xl">⚠️</div>
+                  <p className="text-amber-800 font-semibold">Critical Warning</p>
+                </div>
+                <ul className="text-amber-700 space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                    All class attendance records will be permanently deleted
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                    Class count will reset to 0
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                    This action cannot be undone
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={downloadBeforeReset}
+                    onChange={(e) => setDownloadBeforeReset(e.target.checked)}
+                    className="w-4 h-4 text-blue-500 bg-white border-slate-300 rounded focus:ring-blue-500/20 focus:ring-2"
+                  />
+                  <span className="text-slate-700 text-sm group-hover:text-slate-900 transition-colors">
+                    Download PDF report before reset
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  setTuitionToReset(null);
+                }}
+                className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                Reset & Delete All
               </button>
             </div>
           </div>
