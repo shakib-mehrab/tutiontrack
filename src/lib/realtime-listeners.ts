@@ -1,6 +1,6 @@
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Tuition, ClassLog } from '@/types';
+import { Tuition, ClassLog, Homework } from '@/types';
 
 export interface TuitionListener {
   unsubscribe: () => void;
@@ -76,6 +76,58 @@ export function subscribeToClassLogs(
     callback(logs);
   }, (error) => {
     console.error('Error listening to class logs:', error);
+  });
+
+  return { unsubscribe };
+}
+
+export function subscribeToHomework(
+  userId: string,
+  userRole: 'teacher' | 'student',
+  callback: (homework: Homework[]) => void
+): TuitionListener {
+  const homeworkRef = collection(db, 'homework');
+  const fieldName = userRole === 'teacher' ? 'teacherId' : 'studentId';
+  const q = query(
+    homeworkRef,
+    where(fieldName, '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const homework = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Homework));
+    
+    callback(homework);
+  }, (error) => {
+    console.error('Error listening to homework:', error);
+  });
+
+  return { unsubscribe };
+}
+
+export function subscribeToTuitionHomework(
+  tuitionId: string,
+  callback: (homework: Homework[]) => void
+): TuitionListener {
+  const homeworkRef = collection(db, 'homework');
+  const q = query(
+    homeworkRef,
+    where('tuitionId', '==', tuitionId),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const homework = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Homework));
+    
+    callback(homework);
+  }, (error) => {
+    console.error('Error listening to tuition homework:', error);
   });
 
   return { unsubscribe };

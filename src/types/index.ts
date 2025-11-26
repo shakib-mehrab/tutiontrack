@@ -60,3 +60,32 @@ export interface TuitionProgress {
   classesCompleted: number;
   totalPlanned: number;
 }
+
+export interface Homework {
+  id: string;
+  tuitionId: string;
+  teacherId: string;
+  teacherName: string;
+  studentId: string;
+  studentName: string;
+  subject: string;
+  chapter: string;
+  topic: string;
+  dueDate: Timestamp | Date;
+  notes?: string;
+  status: 'assigned' | 'completed';
+  feedback?: string;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+  completedAt?: Timestamp | Date;
+}
+
+export interface HomeworkComment {
+  id: string;
+  homeworkId: string;
+  userId: string;
+  userName: string;
+  userRole: 'teacher' | 'student';
+  comment: string;
+  createdAt: Timestamp | Date;
+}

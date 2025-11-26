@@ -14,13 +14,19 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { ProgressBar } from '@/components/ProgressBar';
-import { Tuition } from '@/types';
+import { ViewHomeworkModal } from '@/components/ViewHomeworkModal';
+import { Tuition, Homework } from '@/types';
 
 export default function StudentDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [tuitions, setTuitions] = useState<Tuition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
+  const [isHomeworkModalOpen, setIsHomeworkModalOpen] = useState(false);
+  const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null);
+  const [isViewHomeworkOpen, setIsViewHomeworkOpen] = useState(false);
+  const [loadingHomework, setLoadingHomework] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -54,6 +60,31 @@ export default function StudentDashboard() {
     return tuition.plannedClassesPerMonth > 0 
       ? Math.round((tuition.takenClasses / tuition.plannedClassesPerMonth) * 100) 
       : 0;
+  };
+
+  const fetchHomework = async () => {
+    try {
+      setLoadingHomework(true);
+      const response = await fetch('/api/homework');
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setHomeworkList(data);
+      }
+    } catch (error) {
+      console.error('Error fetching homework:', error);
+    } finally {
+      setLoadingHomework(false);
+    }
+  };
+
+  const handleViewHomework = () => {
+    fetchHomework();
+    setIsHomeworkModalOpen(true);
+  };
+
+  const handleHomeworkClick = (homework: Homework) => {
+    setSelectedHomework(homework);
+    setIsViewHomeworkOpen(true);
   };
 
   const handleExportPDF = async (tuition: Tuition) => {
@@ -160,13 +191,7 @@ export default function StudentDashboard() {
               <span className="font-semibold">Overall Progress</span>
               <span className="text-white/80">{totalClasses}/{totalPlanned} classes</span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-3">
-              <div 
-                className={`bg-white rounded-full h-3 transition-all duration-500`}
-                data-progress={Math.min(overallProgress, 100)}
-                style={{width: `${Math.min(overallProgress, 100)}%`}}
-              ></div>
-            </div>
+            <ProgressBar progress={overallProgress} />
             <div className="text-right mt-1">
               <span className="text-sm text-white/80">{overallProgress}% complete</span>
             </div>
@@ -191,6 +216,15 @@ export default function StudentDashboard() {
             <p className="text-sm text-slate-600">Classes Attended</p>
           </div>
         </div>
+
+        {/* View Homework Button */}
+        <button
+          onClick={handleViewHomework}
+          className="btn-secondary mb-6 flex items-center justify-center"
+        >
+          <BookOpen className="h-5 w-5 mr-2" />
+          View Homework
+        </button>
 
         {/* Your Classes */}
         <div className="space-y-4">
@@ -284,6 +318,95 @@ export default function StudentDashboard() {
           </div>
         )}
       </div>
+
+      {/* Homework List Modal */}
+      {isHomeworkModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+          <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-800">My Homework</h2>
+              <button
+                onClick={() => setIsHomeworkModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                title="Close"
+              >
+                <LogOut className="h-5 w-5 rotate-180" />
+              </button>
+            </div>
+
+            {loadingHomework ? (
+              <div className="text-center py-8">
+                <div className="loader-large"></div>
+                <p className="text-slate-600 mt-4">Loading homework...</p>
+              </div>
+            ) : homeworkList.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600">No homework assigned yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {homeworkList.map((homework) => {
+                  let dueDate: Date;
+                  if (homework.dueDate instanceof Date) {
+                    dueDate = homework.dueDate;
+                  } else if (typeof homework.dueDate === 'string') {
+                    dueDate = new Date(homework.dueDate);
+                  } else if (homework.dueDate && typeof homework.dueDate === 'object' && 'toDate' in homework.dueDate) {
+                    dueDate = homework.dueDate.toDate();
+                  } else {
+                    dueDate = new Date(); // Fallback
+                  }
+                  const isOverdue = dueDate < new Date() && homework.status === 'assigned';
+
+                  return (
+                    <div
+                      key={homework.id}
+                      className="border rounded-xl p-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                      onClick={() => handleHomeworkClick(homework)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-slate-800">{homework.subject}</h3>
+                          <p className="text-sm text-slate-600">{homework.chapter} - {homework.topic}</p>
+                        </div>
+                        {homework.status === 'completed' ? (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            Completed
+                          </span>
+                        ) : isOverdue ? (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                            Overdue
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center text-xs text-slate-500">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Due: {dueDate.toLocaleDateString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* View Homework Modal */}
+      <ViewHomeworkModal
+        isOpen={isViewHomeworkOpen}
+        onClose={() => {
+          setIsViewHomeworkOpen(false);
+          setSelectedHomework(null);
+        }}
+        homework={selectedHomework}
+        isTeacher={false}
+      />
     </div>
   );
 }

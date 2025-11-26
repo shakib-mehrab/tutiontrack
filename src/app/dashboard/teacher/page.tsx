@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AddTuitionModal } from "@/components/AddTuitionModal";
+import { AddHomeworkModal } from "@/components/AddHomeworkModal";
 import { Tuition, ClassLog } from "@/types";
 
 interface TuitionFormData {
@@ -54,6 +55,8 @@ export default function TeacherDashboard() {
   const [selectedLogId, setSelectedLogId] = useState("");
   const [tuitionForClassDeletion, setTuitionForClassDeletion] =
     useState<string>("");
+  const [isHomeworkModalOpen, setIsHomeworkModalOpen] = useState(false);
+  const [isSubmittingHomework, setIsSubmittingHomework] = useState(false);
 
   // Redirect if not authenticated or not a teacher
   useEffect(() => {
@@ -152,6 +155,41 @@ export default function TeacherDashboard() {
 
   const calculateProgress = (takenClasses: number, plannedClasses: number) => {
     return plannedClasses > 0 ? (takenClasses / plannedClasses) * 100 : 0;
+  };
+
+  const handleAssignHomework = async (data: {
+    tuitionId: string;
+    subject: string;
+    chapter: string;
+    topic: string;
+    dueDate: string;
+    notes?: string;
+  }) => {
+    try {
+      setIsSubmittingHomework(true);
+      setError("");
+
+      const response = await fetch("/api/homework", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess("Homework assigned successfully!");
+        setIsHomeworkModalOpen(false);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(result.error || "Failed to assign homework");
+      }
+    } catch (error) {
+      setError("Failed to assign homework");
+      console.error("Error assigning homework:", error);
+    } finally {
+      setIsSubmittingHomework(false);
+    }
   };
 
   const handleClassUpdate = async (
@@ -497,10 +535,19 @@ export default function TeacherDashboard() {
         {/* Add Tuition Button */}
         <button
           onClick={() => setIsModalOpen(true)}
-          className="btn-primary mb-6 flex items-center justify-center"
+          className="btn-primary mb-4 flex items-center justify-center"
         >
           <Plus className="h-5 w-5 mr-2" />
           Add New Tuition
+        </button>
+
+        {/* Assign Homework Button */}
+        <button
+          onClick={() => setIsHomeworkModalOpen(true)}
+          className="btn-secondary mb-6 flex items-center justify-center"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Assign Homework
         </button>
 
         {/* Tuitions List */}
@@ -647,6 +694,15 @@ export default function TeacherDashboard() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddTuition}
         isLoading={isSubmitting}
+      />
+
+      {/* Add Homework Modal */}
+      <AddHomeworkModal
+        isOpen={isHomeworkModalOpen}
+        onClose={() => setIsHomeworkModalOpen(false)}
+        onSubmit={handleAssignHomework}
+        isLoading={isSubmittingHomework}
+        tuitions={tuitions}
       />
 
       {/* Delete Confirmation Modal */}

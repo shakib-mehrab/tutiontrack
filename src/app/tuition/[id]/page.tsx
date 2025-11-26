@@ -16,8 +16,10 @@ import {
   RotateCcw,
   CalendarDays
 } from 'lucide-react';
-import { Tuition, ClassLog } from '@/types';
+import { Tuition, ClassLog, Homework } from '@/types';
 import { ProgressBar } from '@/components/ProgressBar';
+import { AddHomeworkModal } from '@/components/AddHomeworkModal';
+import { ViewHomeworkModal } from '@/components/ViewHomeworkModal';
 
 interface TuitionDetails {
   tuition: Tuition;
@@ -49,6 +51,11 @@ export default function TuitionDetailsPage() {
   const [downloadBeforeReset, setDownloadBeforeReset] = useState(true);
   const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [editStudentName, setEditStudentName] = useState('');
+  const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
+  const [isHomeworkModalOpen, setIsHomeworkModalOpen] = useState(false);
+  const [isSubmittingHomework, setIsSubmittingHomework] = useState(false);
+  const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null);
+  const [isViewHomeworkOpen, setIsViewHomeworkOpen] = useState(false);
 
   const fetchTuitionDetails = useCallback(async () => {
     try {
@@ -69,6 +76,24 @@ export default function TuitionDetailsPage() {
       setIsLoading(false);
     }
   }, [params.id]);
+
+  const fetchHomework = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/homework?tuitionId=${params.id}`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setHomeworkList(data);
+      }
+    } catch (error) {
+      console.error('Error fetching homework:', error);
+    }
+  }, [params.id]);
+
+  // Fetch homework on mount and after updates
+  useEffect(() => {
+    if (!params.id) return;
+    fetchHomework();
+  }, [params.id, fetchHomework]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -269,6 +294,115 @@ export default function TuitionDetailsPage() {
     } catch (error) {
       setError('Failed to reset class count');
       console.error('Error resetting classes:', error);
+    }
+  };
+
+  const handleAssignHomework = async (data: {
+    tuitionId: string;
+    subject: string;
+    chapter: string;
+    topic: string;
+    dueDate: string;
+    notes?: string;
+  }) => {
+    try {
+      setIsSubmittingHomework(true);
+      setError('');
+
+      const response = await fetch('/api/homework', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess('Homework assigned successfully!');
+        setIsHomeworkModalOpen(false);
+        await fetchHomework();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(result.error || 'Failed to assign homework');
+      }
+    } catch (error) {
+      setError('Failed to assign homework');
+      console.error('Error assigning homework:', error);
+    } finally {
+      setIsSubmittingHomework(false);
+    }
+  };
+
+  const handleUpdateHomework = async (id: string, data: Partial<Homework>) => {
+    try {
+      const response = await fetch(`/api/homework/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess('Homework updated successfully!');
+        await fetchHomework();
+        setTimeout(() => setSuccess(''), 2000);
+      } else {
+        setError(result.error || 'Failed to update homework');
+      }
+    } catch (error) {
+      setError('Failed to update homework');
+      console.error('Error updating homework:', error);
+    }
+  };
+
+  const handleDeleteHomework = async (id: string) => {
+    try {
+      const response = await fetch(`/api/homework/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess('Homework deleted successfully!');
+        setIsViewHomeworkOpen(false);
+        setSelectedHomework(null);
+        await fetchHomework();
+        setTimeout(() => setSuccess(''), 2000);
+      } else {
+        setError(result.error || 'Failed to delete homework');
+      }
+    } catch (error) {
+      setError('Failed to delete homework');
+      console.error('Error deleting homework:', error);
+    }
+  };
+
+  const handleMarkComplete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/homework/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess('Homework marked as complete!');
+        await fetchHomework();
+        // Update the selected homework if viewing
+        if (selectedHomework && selectedHomework.id === id) {
+          setSelectedHomework(result);
+        }
+        setTimeout(() => setSuccess(''), 2000);
+      } else {
+        setError(result.error || 'Failed to mark homework complete');
+      }
+    } catch (error) {
+      setError('Failed to mark homework complete');
+      console.error('Error marking homework complete:', error);
     }
   };
 
@@ -607,6 +741,13 @@ export default function TuitionDetailsPage() {
                         Add Class
                       </button>
                       <button
+                        onClick={() => setIsHomeworkModalOpen(true)}
+                        className="btn-secondary w-full flex items-center justify-center gap-2"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        Assign Homework
+                      </button>
+                      <button
                         onClick={() => handleClassUpdate('decrement')}
                         className="btn-secondary w-full flex items-center justify-center gap-2"
                       >
@@ -734,6 +875,104 @@ export default function TuitionDetailsPage() {
                         <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                         <p className="text-slate-600 text-lg">No activity recorded yet</p>
                         <p className="text-slate-500 text-sm mt-2">Activity will appear here as you manage classes</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Homework Card */}
+              <div className="card">
+                <h2 className="text-xl font-bold mb-6 flex items-center text-slate-800">
+                  <div className="gradient-bg p-2 rounded-xl mr-3">
+                    <BookOpen className="h-5 w-5 text-white" />
+                  </div>
+                  Homework
+                  <span className="ml-auto bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
+                    {homeworkList.length}
+                  </span>
+                </h2>
+                
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {homeworkList.length > 0 ? (
+                    homeworkList.map((homework) => {
+                      let dueDate: Date;
+                      if (homework.dueDate instanceof Date) {
+                        dueDate = homework.dueDate;
+                      } else if (typeof homework.dueDate === 'string') {
+                        dueDate = new Date(homework.dueDate);
+                      } else if (homework.dueDate && typeof homework.dueDate === 'object' && 'toDate' in homework.dueDate) {
+                        dueDate = homework.dueDate.toDate();
+                      } else {
+                        dueDate = new Date(); // Fallback
+                      }
+                      const isOverdue = dueDate < new Date() && homework.status === 'assigned';
+                      const isCompleted = homework.status === 'completed';
+
+                      return (
+                        <div 
+                          key={homework.id} 
+                          className={`border rounded-xl p-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                            isCompleted ? 'bg-green-50 border-green-200' :
+                            isOverdue ? 'bg-red-50 border-red-200' :
+                            'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                          }`}
+                          onClick={() => {
+                            setSelectedHomework(homework);
+                            setIsViewHomeworkOpen(true);
+                          }}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  isCompleted ? 'bg-green-500' :
+                                  isOverdue ? 'bg-red-500' :
+                                  'bg-blue-500'
+                                }`}></div>
+                                <p className="font-semibold text-slate-800">{homework.subject}</p>
+                              </div>
+                              <p className="text-sm text-slate-600">{homework.chapter}</p>
+                              <p className="text-sm text-slate-500">{homework.topic}</p>
+                            </div>
+                            {isCompleted ? (
+                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                Completed
+                              </span>
+                            ) : isOverdue ? (
+                              <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                                Overdue
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Due: {formatDate(dueDate)}
+                            </span>
+                            {session?.user?.role === 'teacher' && (
+                              <span className="text-blue-600 hover:text-blue-800 font-medium">
+                                Click to {isCompleted ? 'view' : 'edit'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="bg-slate-50 rounded-2xl p-8 border border-slate-200">
+                        <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 text-lg">No homework assigned yet</p>
+                        {session?.user?.role === 'teacher' && (
+                          <p className="text-slate-500 text-sm mt-2">
+                            Click &quot;Assign Homework&quot; in Quick Actions to get started
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1077,6 +1316,29 @@ export default function TuitionDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Add Homework Modal */}
+      <AddHomeworkModal
+        isOpen={isHomeworkModalOpen}
+        onClose={() => setIsHomeworkModalOpen(false)}
+        onSubmit={handleAssignHomework}
+        isLoading={isSubmittingHomework}
+        preSelectedTuitionId={params.id as string}
+      />
+
+      {/* View Homework Modal */}
+      <ViewHomeworkModal
+        isOpen={isViewHomeworkOpen}
+        onClose={() => {
+          setIsViewHomeworkOpen(false);
+          setSelectedHomework(null);
+        }}
+        homework={selectedHomework}
+        isTeacher={session?.user?.role === 'teacher'}
+        onUpdate={handleUpdateHomework}
+        onDelete={handleDeleteHomework}
+        onMarkComplete={handleMarkComplete}
+      />
     </div>
   );
 }

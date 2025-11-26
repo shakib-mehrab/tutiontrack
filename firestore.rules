@@ -50,5 +50,32 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null;
     }
+    
+    // Homework collection
+    match /homework/{homeworkId} {
+      // Allow authenticated users to read homework
+      allow read: if request.auth != null;
+      
+      // Only teachers can create homework
+      allow create: if request.auth != null && 
+        request.resource.data.teacherId == request.auth.uid;
+      
+      // Only the teacher who created the homework can update or delete it
+      allow update, delete: if request.auth != null && 
+        resource.data.teacherId == request.auth.uid;
+      
+      // Homework comments subcollection
+      match /comments/{commentId} {
+        // Allow authenticated users to read comments
+        allow read: if request.auth != null;
+        
+        // Both teacher and student can create comments
+        allow create: if request.auth != null;
+        
+        // Users can only delete their own comments
+        allow delete: if request.auth != null && 
+          resource.data.userId == request.auth.uid;
+      }
+    }
   }
 }
