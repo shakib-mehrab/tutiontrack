@@ -608,11 +608,11 @@ export default function TeacherDashboard() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      {!tuition.studentName && (
+                      {!tuition.studentId && (
                         <button
                           onClick={() => handleAddStudentToTuition(tuition.id)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors text-sm"
-                          title="Add student to this tuition"
+                          title={tuition.studentName ? "Assign registered user account to this student" : "Add student to this tuition"}
                         >
                           <User className="h-4 w-4" />
                         </button>
@@ -795,63 +795,88 @@ export default function TeacherDashboard() {
       )}
 
       {/* Add Student Modal */}
-      {showStudentModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="card w-full max-w-md mx-4 animate-fade-in">
-            <div className="text-center mb-6">
-              <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <User className="h-8 w-8 text-white" />
+      {showStudentModal && (() => {
+        const selectedTuition = tuitions.find(t => t.id === selectedTuitionId);
+        const existingStudentName = selectedTuition?.studentName;
+        const isAssigningAccount = !!existingStudentName;
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+            <div className="card w-full max-w-md mx-4 animate-fade-in">
+              <div className="text-center mb-6">
+                <div className="gradient-bg p-3 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <User className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  {isAssigningAccount ? "Assign User Account" : "Add Student"}
+                </h3>
+                <p className="text-slate-600 text-sm">
+                  {isAssigningAccount
+                    ? `Link a registered account to ${existingStudentName}`
+                    : "Connect a student to this tuition"}
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">
-                Add Student
-              </h3>
-              <p className="text-slate-600 text-sm">
-                Connect a student to this tuition
-              </p>
-            </div>
 
-            <div className="mb-6">
-              <label
-                htmlFor="studentEmail"
-                className="block text-sm font-semibold text-slate-800 mb-3"
-              >
-                Student Email
-              </label>
-              <input
-                id="studentEmail"
-                type="email"
-                value={studentEmail}
-                onChange={(e) => setStudentEmail(e.target.value)}
-                className="input-field"
-                placeholder="student@example.com"
-              />
-              <p className="text-slate-500 text-xs mt-2">
-                Enter the email address of an existing student account
-              </p>
-            </div>
+              {isAssigningAccount && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4">
+                  <p className="text-blue-700 text-sm font-medium">Current student</p>
+                  <p className="text-blue-900 text-sm font-semibold">{existingStudentName}</p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    Assigning a user account will link their profile to this tuition.
+                  </p>
+                </div>
+              )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowStudentModal(false);
-                  setStudentEmail("");
-                  setSelectedTuitionId("");
-                }}
-                className="btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddStudent}
-                disabled={!studentEmail.trim()}
-                className="btn-primary flex-1"
-              >
-                Add Student
-              </button>
+              {error && (
+                <div className="error-message mb-4">{error}</div>
+              )}
+
+              <div className="mb-6">
+                <label
+                  htmlFor="studentEmail"
+                  className="block text-sm font-semibold text-slate-800 mb-3"
+                >
+                  Student Email
+                </label>
+                <input
+                  id="studentEmail"
+                  type="email"
+                  value={studentEmail}
+                  onChange={(e) => {
+                    setStudentEmail(e.target.value);
+                    if (error) setError("");
+                  }}
+                  className="input-field"
+                  placeholder="student@example.com"
+                />
+                <p className="text-slate-500 text-xs mt-2">
+                  Enter the email address of a registered student account
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowStudentModal(false);
+                    setStudentEmail("");
+                    setSelectedTuitionId("");
+                    setError("");
+                  }}
+                  className="btn-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddStudent}
+                  disabled={!studentEmail.trim()}
+                  className="btn-primary flex-1"
+                >
+                  {isAssigningAccount ? "Assign Account" : "Add Student"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Delete Class Modal */}
       {showDeleteClassModal && (

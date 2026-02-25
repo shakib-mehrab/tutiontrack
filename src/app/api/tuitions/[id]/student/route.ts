@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { updateDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { getUserByEmail } from '@/lib/auth-helpers';
 import { Tuition } from '@/types';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -27,7 +27,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(studentEmail)) {
       return NextResponse.json(
@@ -36,11 +35,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    // Check if tuition exists and user is the teacher
-    const tuitionRef = doc(db, 'tuitions', resolvedParams.id);
-    const tuitionDoc = await getDoc(tuitionRef);
-    
-    if (!tuitionDoc.exists()) {
+    const adminDb = getAdminDb();
+
+    // Check if tuition exists and teacher owns it
+    const tuitionRef = adminDb.collection('tuitions').doc(resolvedParams.id);
+    const tuitionDoc = await tuitionRef.get();
+
+    if (!tuitionDoc.exists) {
       return NextResponse.json(
         { success: false, message: 'Tuition not found' },
         { status: 404 }
@@ -72,28 +73,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Update tuition with student information
-    await updateDoc(tuitionRef, {
+    await tuitionRef.update({
       studentId: student.uid,
       studentName: student.name,
       studentEmail: student.email,
       updatedAt: new Date(),
     });
 
-    // Update student's linkedTuitions
-    const studentRef = doc(db, 'users', student.uid);
-    const studentDoc = await getDoc(studentRef);
-    
-    if (studentDoc.exists()) {
-      const studentData = studentDoc.data();
-      const linkedTuitions = studentData.linkedTuitions || [];
-      
-      if (!linkedTuitions.includes(resolvedParams.id)) {
-        linkedTuitions.push(resolvedParams.id);
-        await updateDoc(studentRef, {
-          linkedTuitions,
-        });
-      }
-    }
+    // Add tuition to student's linkedTuitions (atomic, avoids duplicates)
+    const studentRef = adminDb.collection('users').doc(student.uid);
+    await studentRef.update({
+      linkedTuitions: FieldValue.arrayUnion(resolvedParams.id),
+    });
 
     return NextResponse.json({
       success: true,

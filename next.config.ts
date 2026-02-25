@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     webpackBuildWorker: true,
   },
   
+  // Workspace root configuration
+  outputFileTracingRoot: 'E:\\Fun project\\TuitionTrack\\tutiontrack',
+  
   // Performance optimizations
   images: {
     formats: ['image/webp', 'image/avif'],
