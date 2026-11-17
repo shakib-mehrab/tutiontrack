@@ -1,137 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { createTuition, getTuitionsByTeacher, getTuitionsByStudent } from '@/lib/tuition-helpers';
+import { serializeTimestamps } from '@/lib/serialize';
+import { createTuitionSchema, firstIssue } from '@/lib/schemas';
+import {
+  createTuition,
+  getCurrentClassDatesFor,
+  getTuitionsByTeacher,
+  getTuitionsByStudent,
+  monthKey,
+} from '@/lib/tuition-helpers';
 import { getUserByEmail } from '@/lib/auth-helpers';
-
-// Helper function to convert Firestore Timestamps to serializable format
-function serializeTimestamps(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  
-  // Check if it's a Firestore Timestamp object
-  if (typeof obj === 'object' && obj !== null) {
-    const timestampObj = obj as Record<string, unknown>;
-    if (timestampObj._seconds !== undefined || (timestampObj.seconds !== undefined && timestampObj.nanoseconds !== undefined)) {
-      // This is a Firestore Timestamp
-      const seconds = (timestampObj._seconds || timestampObj.seconds) as number;
-      return new Date(seconds * 1000).toISOString();
-    }
-  }
-  
-  if (obj instanceof Date) {
-    return obj.toISOString();
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(serializeTimestamps);
-  }
-  
-  if (typeof obj === 'object') {
-    const serialized: Record<string, unknown> = {};
-    for (const key in obj) {
-      serialized[key] = serializeTimestamps((obj as Record<string, unknown>)[key]);
-    }
-    return serialized;
-  }
-  
-  return obj;
-}
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user || session.user.role !== 'teacher') {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { studentEmail, studentName, subject, startTime, endTime, daysPerWeek, plannedClassesPerMonth } = body;
-
-    if (!subject || !startTime || !endTime || !daysPerWeek || !plannedClassesPerMonth) {
-      return NextResponse.json(
-        { success: false, message: 'Subject, start time, end time, days per week, and planned classes per month are required' },
-        { status: 400 }
-      );
+    const parsed = createTuitionSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: firstIssue(parsed.error) }, { status: 400 });
     }
+    const { studentEmail, studentName, subject, startTime, endTime, weekdays, plannedClassesPerMonth, feeAmount } =
+      parsed.data;
 
     let student = null;
     if (studentEmail) {
-      // Find student by email if provided
       student = await getUserByEmail(studentEmail);
       if (!student) {
         return NextResponse.json(
-          { success: false, message: 'Student not found' },
+          { success: false, message: 'No account with that email. Leave it empty and add the student name instead.' },
           { status: 404 }
         );
       }
-
       if (student.role !== 'student') {
-        return NextResponse.json(
-          { success: false, message: 'User is not a student' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: 'That account is not a student account' }, { status: 400 });
       }
     }
 
-    const currentDate = new Date();
-    const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    if (!student && !studentName) {
+      return NextResponse.json({ success: false, message: 'Add the student’s name or email' }, { status: 400 });
+    }
 
     const result = await createTuition({
       teacherId: session.user.id,
-      teacherName: session.user.name!,
+      teacherName: session.user.name ?? 'Teacher',
       studentId: student?.uid || null,
       studentName: student?.name || studentName || null,
       studentEmail: student?.email || null,
       subject,
       startTime,
       endTime,
-      daysPerWeek,
+      weekdays,
+      daysPerWeek: weekdays.length,
       plannedClassesPerMonth,
-      currentMonthYear,
+      feeAmount: feeAmount ?? null,
+      currentMonthYear: monthKey(),
       takenClasses: 0,
     });
 
-    return NextResponse.json(result, {
-      status: result.success ? 201 : 400,
-    });
+    return NextResponse.json(result, { status: result.success ? 201 : 400 });
   } catch (error) {
     console.error('Create tuition API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }
 
+/** The user's tuitions, each with this month's class dates (for "today" and "missed"). */
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    let tuitions;
-    if (session.user.role === 'teacher') {
-      tuitions = await getTuitionsByTeacher(session.user.id);
-    } else {
-      tuitions = await getTuitionsByStudent(session.user.id);
-    }
+    const tuitions =
+      session.user.role === 'teacher'
+        ? await getTuitionsByTeacher(session.user.id)
+        : await getTuitionsByStudent(session.user.id);
+    const classDates = await getCurrentClassDatesFor(tuitions);
 
-    // Serialize timestamps before sending response
-    const serializedData = serializeTimestamps({ success: true, tuitions });
-
-    return NextResponse.json(serializedData);
+    return NextResponse.json(serializeTimestamps({ success: true, tuitions, classDates }));
   } catch (error) {
     console.error('Get tuitions API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

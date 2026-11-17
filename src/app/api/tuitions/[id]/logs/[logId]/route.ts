@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Tuition, ClassLog } from '@/types';
+import { cycleOfLog, cycleOfTuition } from '@/lib/tuition-helpers';
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; logId: string }> }) {
   try {
@@ -63,6 +64,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     if (classLog.actionType !== 'increment') {
       return NextResponse.json(
         { success: false, message: 'Only class attendance logs can be deleted' },
+        { status: 400 }
+      );
+    }
+
+    // Closed months are read-only; deleting from them would wrongly lower this month's count.
+    if (cycleOfLog(classLog) !== cycleOfTuition(tuition)) {
+      return NextResponse.json(
+        { success: false, message: 'This class belongs to a closed month and cannot be deleted' },
         { status: 400 }
       );
     }

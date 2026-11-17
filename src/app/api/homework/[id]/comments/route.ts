@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { serializeTimestamps } from '@/lib/serialize';
 
 // GET /api/homework/[id]/comments - Get all comments for homework
 export async function GET(
@@ -56,7 +57,7 @@ export async function GET(
       ...doc.data(),
     }));
 
-    return NextResponse.json(comments);
+    return NextResponse.json(serializeTimestamps(comments));
   } catch (error) {
     console.error('Error fetching comments:', error);
     return NextResponse.json(
@@ -131,13 +132,7 @@ export async function POST(
       .collection('comments')
       .add(commentData);
 
-    return NextResponse.json(
-      {
-        id: commentRef.id,
-        ...commentData,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(serializeTimestamps({ id: commentRef.id, ...commentData }), { status: 201 });
   } catch (error) {
     console.error('Error creating comment:', error);
     return NextResponse.json(

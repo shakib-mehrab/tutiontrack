@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // PWA Configuration
-  experimental: {
-    webpackBuildWorker: true,
-  },
-  
+  // The parent folder has a stray package-lock.json; pin the app root.
+  turbopack: { root: process.cwd() },
+
   // Performance optimizations
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -16,9 +14,13 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Environment variables validation
-  env: {
-    CUSTOM_NODE_ENV: process.env.NODE_ENV,
+  // Old URLs (pre-redesign) keep working for bookmarks and installed shortcuts.
+  async redirects() {
+    return [
+      { source: '/dashboard/teacher', destination: '/dashboard', permanent: true },
+      { source: '/dashboard/student', destination: '/dashboard', permanent: true },
+      { source: '/tuition/:id', destination: '/tuitions/:id', permanent: true },
+    ];
   },
 
   // Headers for security and performance
@@ -50,7 +52,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=3600, must-revalidate',
           },
         ],
       },

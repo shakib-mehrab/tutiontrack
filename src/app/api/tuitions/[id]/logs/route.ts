@@ -1,70 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getClassLogs } from '@/lib/tuition-helpers';
 import { getTuitionForUser } from '@/lib/access';
+import { serializeTimestamps } from '@/lib/serialize';
+import { getClassLogs } from '@/lib/tuition-helpers';
 
-// Helper function to convert Firestore Timestamps to serializable format
-function serializeTimestamps(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  
-  // Check if it's a Firestore Timestamp object
-  if (typeof obj === 'object' && obj !== null) {
-    const timestampObj = obj as Record<string, unknown>;
-    if (timestampObj._seconds !== undefined || (timestampObj.seconds !== undefined && timestampObj.nanoseconds !== undefined)) {
-      // This is a Firestore Timestamp
-      const seconds = (timestampObj._seconds || timestampObj.seconds) as number;
-      return new Date(seconds * 1000).toISOString();
-    }
-  }
-  
-  if (obj instanceof Date) {
-    return obj.toISOString();
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(serializeTimestamps);
-  }
-  
-  if (typeof obj === 'object') {
-    const serialized: Record<string, unknown> = {};
-    for (const key in obj) {
-      serialized[key] = serializeTimestamps((obj as Record<string, unknown>)[key]);
-    }
-    return serialized;
-  }
-  
-  return obj;
-}
-
+/**
+ * Activity log for a tuition. Defaults to the current month;
+ * pass ?cycle=<month record id> to get a closed month's log.
+ */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const resolvedParams = await params;
-
-    const access = await getTuitionForUser(resolvedParams.id, session.user.id);
+    const { id } = await params;
+    const access = await getTuitionForUser(id, session.user.id);
     if (!access.ok) {
       return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    const logs = await getClassLogs(resolvedParams.id);
+    const cycle = request.nextUrl.searchParams.get('cycle') ?? undefined;
+    const logs = await getClassLogs(access.tuition, cycle);
 
-    // Serialize timestamps before sending response
-    const serializedData = serializeTimestamps({ success: true, logs });
-
-    return NextResponse.json(serializedData);
+    return NextResponse.json(serializeTimestamps({ success: true, logs }));
   } catch (error) {
     console.error('Get class logs API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

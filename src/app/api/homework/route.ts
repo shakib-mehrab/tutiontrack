@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { serializeTimestamps } from '@/lib/serialize';
 import { Homework } from '@/types';
 import { getTuitionForUser } from '@/lib/access';
 
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       ...doc.data(),
     })) as Homework[];
 
-    return NextResponse.json(homework);
+    return NextResponse.json(serializeTimestamps(homework));
   } catch (error) {
     console.error('Error fetching homework:', error);
     return NextResponse.json(
@@ -133,13 +134,7 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('homework').add(homeworkData);
 
-    return NextResponse.json(
-      { 
-        id: docRef.id,
-        ...homeworkData,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(serializeTimestamps({ id: docRef.id, ...homeworkData }), { status: 201 });
   } catch (error) {
     console.error('Error creating homework:', error);
     return NextResponse.json(

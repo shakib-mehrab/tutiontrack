@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getTuitionForUser } from '@/lib/access';
-import { updateClassCount, resetClassCount } from '@/lib/tuition-helpers';
+import { updateClassCount, closeMonth } from '@/lib/tuition-helpers';
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -28,6 +28,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json();
     const { action, classDate } = body;
+    const note = typeof body.note === 'string' ? body.note.trim().slice(0, 200) : undefined;
 
     if (!['increment', 'decrement', 'reset'].includes(action)) {
       return NextResponse.json({ success: false, message: 'Invalid action' }, { status: 400 });
@@ -41,10 +42,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    // 'reset' is kept for the current UI; it now closes the month instead of deleting history.
     const result =
       action === 'reset'
-        ? await resetClassCount(id)
-        : await updateClassCount(id, action, session.user.id, session.user.name ?? 'Teacher', date);
+        ? await closeMonth(access.tuition, session.user.id, session.user.name ?? 'Teacher')
+        : await updateClassCount(id, action, session.user.id, session.user.name ?? 'Teacher', date, note);
 
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {

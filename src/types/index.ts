@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase-admin/firestore';
 
 export interface User {
   uid: string;
@@ -33,10 +33,44 @@ export interface Tuition {
   endTime: string; // Format: "HH:mm"
   daysPerWeek: number;
   plannedClassesPerMonth: number;
-  currentMonthYear: string; // Format: "YYYY-MM"
+  currentMonthYear: string; // Format: "YYYY-MM" — label of the current (open) month
   takenClasses: number;
+  /** Id of the current open month. Missing on tuitions created before month history existed ("legacy"). */
+  cycleId?: string;
+  /** When the current open month started. Missing on legacy tuitions (use the 1st of currentMonthYear). */
+  cycleStartedAt?: Timestamp | Date | string;
+  /** Class days, 0 = Sunday … 6 = Saturday. Missing on legacy tuitions (only daysPerWeek is known). */
+  weekdays?: number[];
+  /** Monthly fee in BDT. null/missing = not set. */
+  feeAmount?: number | null;
+  /** Payment for the current open month. */
+  currentPayment?: Payment | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+/** Fee payment status for one month. */
+export interface Payment {
+  paid: boolean;
+  amount: number | null;
+  paidAt?: Timestamp | Date | string | null;
+  /** Receipt number shown on the payment slip, set when marked paid. */
+  slipNo?: string | null;
+  markedBy?: string | null;
+}
+
+/** A closed month, saved when the teacher closes the month. Stored at tuitions/{id}/months/{cycleId}. */
+export interface MonthRecord {
+  id: string; // = the closed cycleId
+  tuitionId: string;
+  monthYear: string; // "YYYY-MM" label of the closed month
+  plannedClasses: number;
+  takenClasses: number;
+  classDates: (Timestamp | Date | string)[];
+  closedAt: Timestamp | Date | string;
+  closedBy: string;
+  closedByName: string;
+  payment?: Payment | null;
 }
 
 export interface ClassLog {
@@ -48,6 +82,8 @@ export interface ClassLog {
   addedByName: string;
   description?: string;
   classDate?: Timestamp; // The actual date when the class happened (for increment actions)
+  /** Month this log belongs to. Missing on logs from before month history ("legacy"). */
+  cycleId?: string;
   createdAt: Timestamp;
 }
 

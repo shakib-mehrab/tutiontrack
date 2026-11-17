@@ -1,207 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { FieldValue } from 'firebase-admin/firestore';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { Tuition } from '@/types';
+import { getTuitionForUser } from '@/lib/access';
+import { serializeTimestamps } from '@/lib/serialize';
+import { firstIssue, updateTuitionSchema } from '@/lib/schemas';
 import { getClassLogs, getClassDates, deleteTuition } from '@/lib/tuition-helpers';
-import { FieldValue } from 'firebase-admin/firestore';
 
-// Helper function to convert Firestore Timestamps to serializable format
-function serializeTimestamps(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return obj;
-  
-  // Check if it's a Firestore Timestamp object
-  if (typeof obj === 'object' && obj !== null) {
-    const timestampObj = obj as Record<string, unknown>;
-    if (timestampObj._seconds !== undefined || (timestampObj.seconds !== undefined && timestampObj.nanoseconds !== undefined)) {
-      // This is a Firestore Timestamp
-      const seconds = (timestampObj._seconds || timestampObj.seconds) as number;
-      return new Date(seconds * 1000).toISOString();
-    }
-  }
-  
-  if (obj instanceof Date) {
-    return obj.toISOString();
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(serializeTimestamps);
-  }
-  
-  if (typeof obj === 'object') {
-    const serialized: Record<string, unknown> = {};
-    for (const key in obj) {
-      serialized[key] = serializeTimestamps((obj as Record<string, unknown>)[key]);
-    }
-    return serialized;
-  }
-  
-  return obj;
-}
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+const unauthorized = () => NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+
+/** Tuition with the current month's activity log and class dates. */
+export async function GET(_request: NextRequest, { params }: Ctx) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user) return unauthorized();
+
+    const { id } = await params;
+    const access = await getTuitionForUser(id, session.user.id);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    const resolvedParams = await params;
-    
-    // Use Firebase Admin SDK for server-side operations
-    const adminDb = getAdminDb();
-    const tuitionDoc = await adminDb.collection('tuitions').doc(resolvedParams.id).get();
+    const [logs, classDates] = await Promise.all([getClassLogs(access.tuition), getClassDates(access.tuition)]);
 
-    if (!tuitionDoc.exists) {
-      return NextResponse.json(
-        { success: false, message: 'Tuition not found' },
-        { status: 404 }
-      );
-    }
-
-    const tuition = { id: tuitionDoc.id, ...tuitionDoc.data() } as Tuition;
-
-    // Check if user has access to this tuition
-    if (tuition.teacherId !== session.user.id && tuition.studentId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
-    }
-
-    // Get all logs and class dates
-    const [logs, classDates] = await Promise.all([
-      getClassLogs(resolvedParams.id),
-      getClassDates(resolvedParams.id)
-    ]);
-
-    // Serialize all timestamps before sending response
-    const serializedData = serializeTimestamps({
-      success: true, 
-      tuition,
-      logs,
-      classDates
-    });
-
-    return NextResponse.json(serializedData);
+    return NextResponse.json(serializeTimestamps({ success: true, tuition: access.tuition, logs, classDates }));
   } catch (error) {
     console.error('Get tuition API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: NextRequest, { params }: Ctx) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'teacher') {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user || session.user.role !== 'teacher') return unauthorized();
+
+    const { id } = await params;
+    const access = await getTuitionForUser(id, session.user.id, { teacherOnly: true });
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    const resolvedParams = await params;
-    
-    // Use Firebase Admin SDK for server-side operations
-    const adminDb = getAdminDb();
-    const tuitionDoc = await adminDb.collection('tuitions').doc(resolvedParams.id).get();
-
-    if (!tuitionDoc.exists) {
-      return NextResponse.json(
-        { success: false, message: 'Tuition not found' },
-        { status: 404 }
-      );
-    }
-
-    const tuition = { id: tuitionDoc.id, ...tuitionDoc.data() } as Tuition;
-
-    // Check if the teacher owns this tuition
-    if (tuition.teacherId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
-    }
-
-    // Delete the tuition
-    const result = await deleteTuition(resolvedParams.id);
-
-    return NextResponse.json(result, {
-      status: result.success ? 200 : 400,
-    });
+    const result = await deleteTuition(id);
+    return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
     console.error('Delete tuition API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/** Edits a tuition: subject, student name, schedule, planned classes, fee. */
+export async function PATCH(request: NextRequest, { params }: Ctx) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'teacher') {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user || session.user.role !== 'teacher') return unauthorized();
+
+    const { id } = await params;
+    const parsed = updateTuitionSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: firstIssue(parsed.error) }, { status: 400 });
     }
 
-    const resolvedParams = await params;
-    const body = await request.json();
-    const { studentName } = body;
-
-    if (!studentName || !studentName.trim()) {
-      return NextResponse.json(
-        { success: false, message: 'Student name is required' },
-        { status: 400 }
-      );
+    const access = await getTuitionForUser(id, session.user.id, { teacherOnly: true });
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
     }
 
-    // Use Firebase Admin SDK for server-side operations
-    const adminDb = getAdminDb();
-    const tuitionRef = adminDb.collection('tuitions').doc(resolvedParams.id);
-    const tuitionDoc = await tuitionRef.get();
-
-    if (!tuitionDoc.exists) {
-      return NextResponse.json(
-        { success: false, message: 'Tuition not found' },
-        { status: 404 }
-      );
+    const changes: Record<string, unknown> = { ...parsed.data, updatedAt: FieldValue.serverTimestamp() };
+    if (parsed.data.weekdays) changes.daysPerWeek = parsed.data.weekdays.length;
+    // A new fee applies to the open month too, unless that month is already paid.
+    if (parsed.data.feeAmount !== undefined && !access.tuition.currentPayment?.paid) {
+      changes.currentPayment = { ...(access.tuition.currentPayment ?? { paid: false }), amount: parsed.data.feeAmount };
     }
 
-    const tuition = tuitionDoc.data() as Tuition;
+    await getAdminDb().collection('tuitions').doc(id).update(changes);
 
-    // Check if the teacher owns this tuition
-    if (tuition.teacherId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, message: 'Access denied' },
-        { status: 403 }
-      );
-    }
-
-    // Update the student name
-    await tuitionRef.update({
-      studentName: studentName.trim(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Student name updated successfully',
-    });
+    return NextResponse.json({ success: true, message: 'Tuition updated' });
   } catch (error) {
     console.error('Update tuition API error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 }

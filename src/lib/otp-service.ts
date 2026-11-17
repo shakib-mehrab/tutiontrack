@@ -1,5 +1,5 @@
 import { createHmac, randomInt, timingSafeEqual } from 'crypto';
-import nodemailer from 'nodemailer';
+import { escapeHtml, sendMail } from '@/lib/mailer';
 
 export const OTP_TTL_MINUTES = 10;
 export const OTP_MAX_ATTEMPTS = 5;
@@ -37,30 +37,13 @@ export function isOTPExpired(expiryTime: Date): boolean {
   return new Date() > expiryTime;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-}
-
 export async function sendOTPEmail(
   email: string,
   name: string,
   otp: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS environment variables.');
-    }
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.FROM_EMAIL || process.env.SMTP_USER,
+    await sendMail({
       to: email,
       subject: 'Your TuitionTrack verification code',
       html: `

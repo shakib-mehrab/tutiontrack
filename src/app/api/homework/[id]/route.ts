@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { serializeTimestamps } from '@/lib/serialize';
 
 // GET /api/homework/[id] - Get specific homework
 export async function GET(
@@ -43,10 +44,10 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
+    return NextResponse.json(serializeTimestamps({
       id: doc.id,
       ...homeworkData,
-    });
+    }));
   } catch (error) {
     console.error('Error fetching homework:', error);
     return NextResponse.json(
@@ -111,15 +112,18 @@ export async function PUT(
     if (body.status === 'completed' && homeworkData?.status !== 'completed') {
       updateData.status = 'completed';
       updateData.completedAt = new Date();
+    } else if (body.status === 'assigned' && homeworkData?.status === 'completed') {
+      updateData.status = 'assigned';
+      updateData.completedAt = null;
     }
 
     await docRef.update(updateData);
 
     const updatedDoc = await docRef.get();
-    return NextResponse.json({
+    return NextResponse.json(serializeTimestamps({
       id: updatedDoc.id,
       ...updatedDoc.data(),
-    });
+    }));
   } catch (error) {
     console.error('Error updating homework:', error);
     return NextResponse.json(
