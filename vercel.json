@@ -11,9 +11,6 @@
     }
   },
   "crons": [],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "rewrites": [
     {
       "source": "/sw.js",
