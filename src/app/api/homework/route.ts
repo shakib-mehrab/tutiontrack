@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Homework } from '@/types';
+import { getTuitionForUser } from '@/lib/access';
 
 // GET /api/homework - Get all homework for the authenticated user
 export async function GET(request: NextRequest) {
@@ -22,8 +23,12 @@ export async function GET(request: NextRequest) {
     const adminDb = getAdminDb();
     let query: FirebaseFirestore.Query = adminDb.collection('homework');
     
-    // If tuitionId is specified, just use that (more specific)
     if (tuitionId) {
+      // Only the tuition's teacher or student may list its homework.
+      const access = await getTuitionForUser(tuitionId, session.user.id);
+      if (!access.ok) {
+        return NextResponse.json({ error: access.message }, { status: access.status });
+      }
       query = query.where('tuitionId', '==', tuitionId);
     } else {
       // Otherwise filter based on user role

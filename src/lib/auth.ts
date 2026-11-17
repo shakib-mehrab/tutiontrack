@@ -1,9 +1,52 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { getAdminAuth, getAdminDb } from './firebase-admin';
 import { User } from '@/types';
+
+/**
+ * Verifies an email/password against Firebase Auth using its REST endpoint.
+ * This is stateless per request. (The browser SDK's signInWithEmailAndPassword keeps one
+ * shared signed-in user per server process, which must never be used on the server.)
+ * Returns the Firebase uid on success; throws one of our error codes otherwise.
+ */
+async function verifyPassword(email: string, password: string): Promise<string> {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) throw new Error('AUTH_ERROR');
+
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: false }),
+      cache: 'no-store',
+    }
+  );
+
+  const data = (await res.json()) as { localId?: string; error?: { message?: string } };
+  if (res.ok && data.localId) return data.localId;
+
+  const code = data.error?.message ?? '';
+  if (
+    code.startsWith('INVALID_LOGIN_CREDENTIALS') ||
+    code.startsWith('INVALID_PASSWORD') ||
+    code.startsWith('EMAIL_NOT_FOUND') ||
+    code.startsWith('USER_DISABLED')
+  ) {
+    throw new Error('INVALID_CREDENTIALS');
+  }
+  if (code.startsWith('INVALID_EMAIL')) throw new Error('INVALID_EMAIL');
+  if (code.startsWith('TOO_MANY_ATTEMPTS_TRY_LATER')) throw new Error('TOO_MANY_REQUESTS');
+  throw new Error('AUTH_ERROR');
+}
+
+const KNOWN_ERRORS = new Set([
+  'UNVERIFIED_EMAIL',
+  'USER_NOT_FOUND',
+  'INVALID_CREDENTIALS',
+  'INVALID_EMAIL',
+  'TOO_MANY_REQUESTS',
+]);
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -19,62 +62,30 @@ const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Sign in with Firebase Auth
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            credentials.email as string,
-            credentials.password as string
-          );
+          const uid = await verifyPassword(credentials.email.trim(), credentials.password);
 
-          const firebaseUser = userCredential.user;
-
-          // Check if email is verified
+          const firebaseUser = await getAdminAuth().getUser(uid);
           if (!firebaseUser.emailVerified) {
             throw new Error('UNVERIFIED_EMAIL');
           }
 
-          // Get user data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          
-          if (!userDoc.exists()) {
+          const userDoc = await getAdminDb().collection('users').doc(uid).get();
+          if (!userDoc.exists) {
             throw new Error('USER_NOT_FOUND');
           }
-
           const userData = userDoc.data() as User;
 
           return {
-            id: firebaseUser.uid,
+            id: uid,
             email: firebaseUser.email!,
             name: userData.name,
             role: userData.role,
           };
         } catch (error: unknown) {
+          if (error instanceof Error && KNOWN_ERRORS.has(error.message)) {
+            throw error;
+          }
           console.error('Auth error:', error);
-          
-          // Re-throw custom errors
-          if (error instanceof Error) {
-            if (error.message === 'UNVERIFIED_EMAIL' || error.message === 'USER_NOT_FOUND') {
-              throw error;
-            }
-          }
-          
-          // Handle Firebase auth errors
-          const firebaseError = error as { code?: string; message?: string };
-          if (firebaseError.code === 'auth/invalid-credential' || 
-              firebaseError.code === 'auth/wrong-password' || 
-              firebaseError.code === 'auth/user-not-found') {
-            throw new Error('INVALID_CREDENTIALS');
-          }
-          
-          if (firebaseError.code === 'auth/invalid-email') {
-            throw new Error('INVALID_EMAIL');
-          }
-          
-          if (firebaseError.code === 'auth/too-many-requests') {
-            throw new Error('TOO_MANY_REQUESTS');
-          }
-          
-          // Generic error for unknown issues
           throw new Error('AUTH_ERROR');
         }
       },
@@ -86,26 +97,23 @@ const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // On sign in, add user role to token
       if (user) {
         token.role = user.role;
         token.id = user.id;
       }
-      
-      // On subsequent requests, ensure role persists
-      // If token doesn't have role but has sub, fetch from Firestore
+
+      // Older tokens may lack a role; look it up once.
       if (!token.role && token.sub) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', token.sub));
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            token.role = userData.role;
+          const userDoc = await getAdminDb().collection('users').doc(token.sub).get();
+          if (userDoc.exists) {
+            token.role = (userDoc.data() as User).role;
           }
         } catch (error) {
           console.error('Error fetching user role:', error);
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -116,27 +124,20 @@ const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle sign out redirect
       if (url.startsWith('/auth/signout')) {
         return `${baseUrl}/auth/signin`;
       }
-      
-      // After successful sign in, redirect to dashboard
       if (url === baseUrl || url === `${baseUrl}/` || url === '/') {
         return `${baseUrl}/dashboard`;
       }
-      
-      // Allow relative URLs
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
       }
-      
-      // Allow same-origin URLs
-      if (new URL(url).origin === baseUrl) {
-        return url;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {
+        // malformed URL: fall through to dashboard
       }
-      
-      // Default to dashboard for successful auth
       return `${baseUrl}/dashboard`;
     },
   },
@@ -147,4 +148,3 @@ const authOptions: NextAuthOptions = {
 };
 
 export { authOptions };
-export default NextAuth(authOptions);

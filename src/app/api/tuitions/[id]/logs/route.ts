@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getClassLogs } from '@/lib/tuition-helpers';
+import { getTuitionForUser } from '@/lib/access';
 
 // Helper function to convert Firestore Timestamps to serializable format
 function serializeTimestamps(obj: unknown): unknown {
@@ -47,6 +48,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const resolvedParams = await params;
+
+    const access = await getTuitionForUser(resolvedParams.id, session.user.id);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, message: access.message }, { status: access.status });
+    }
+
     const logs = await getClassLogs(resolvedParams.id);
 
     // Serialize timestamps before sending response

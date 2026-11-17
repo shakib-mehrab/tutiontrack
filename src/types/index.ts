@@ -7,10 +7,14 @@ export interface User {
   name: string;
   createdAt: Timestamp | Date;
   emailVerified: boolean;
-  // OTP fields
-  otpCode?: string;
-  otpExpiry?: Timestamp | Date;
-  otpAttempts?: number; // Track failed attempts
+  // OTP fields (the code itself is stored only as an HMAC in otpHash)
+  otpHash?: string | null;
+  otpCode?: string | null; // legacy plaintext code; always cleared now
+  otpExpiry?: Timestamp | Date | null;
+  otpAttempts?: number | null; // failed attempts for the current code
+  otpLastSentAt?: Timestamp | Date;
+  otpSendCount?: number; // codes sent in the current one-hour window
+  otpSendWindowStart?: Timestamp | Date;
   // Legacy email verification fields (for migration)
   verificationToken?: string;
   verificationTokenExpiry?: Timestamp | Date;

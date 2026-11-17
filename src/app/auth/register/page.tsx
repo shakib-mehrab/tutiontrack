@@ -33,8 +33,8 @@ export default function Register() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
       setIsLoading(false);
       return;
     }
@@ -212,7 +212,7 @@ export default function Register() {
                 value={formData.password}
                 onChange={handleInputChange}
                 className="form-input pr-12"
-                placeholder="Enter your password (min 6 characters)"
+                placeholder="Enter your password (min 8 characters)"
                 required
                 autoComplete="new-password"
               />

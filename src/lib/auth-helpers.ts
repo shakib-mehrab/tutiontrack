@@ -1,14 +1,16 @@
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { User } from '@/types';
-import { 
-  sendWelcomeEmail
-} from '@/lib/email-service';
+import { sendWelcomeEmail } from '@/lib/email-service';
 import {
   generateOTP,
   getOTPExpiry,
+  hashOTP,
   sendOTPEmail,
   verifyOTPCode,
-  isOTPExpired
+  isOTPExpired,
+  OTP_MAX_ATTEMPTS,
+  OTP_MAX_SENDS_PER_HOUR,
+  OTP_RESEND_COOLDOWN_SECONDS,
 } from '@/lib/otp-service';
 
 export interface RegisterUserData {
@@ -18,76 +20,110 @@ export interface RegisterUserData {
   role: 'teacher' | 'student';
 }
 
-export async function registerUser(userData: RegisterUserData): Promise<{ success: boolean; message: string; uid?: string }> {
+type Result = { success: boolean; message: string };
+
+const GENERIC_OTP_FAILURE = 'Invalid or expired code. Please request a new one.';
+const GENERIC_RESEND_MESSAGE = 'If an unverified account exists for this email, a new code has been sent.';
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
+ * Finds a user doc by email. New accounts store lowercase emails; older ones may have
+ * been saved exactly as typed, so fall back to the trimmed original.
+ */
+async function findUserDocByEmail(rawEmail: string) {
+  const users = getAdminDb().collection('users');
+  const normalized = normalizeEmail(rawEmail);
+  let snap = await users.where('email', '==', normalized).limit(1).get();
+  if (snap.empty && rawEmail.trim() !== normalized) {
+    snap = await users.where('email', '==', rawEmail.trim()).limit(1).get();
+  }
+  return snap.empty ? null : snap.docs[0];
+}
+
+function toDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate: unknown }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  return null;
+}
+
+export async function registerUser(userData: RegisterUserData): Promise<Result & { uid?: string }> {
   try {
-    // Get Firebase Admin instances
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
-    
-    // Check if user already exists in Firestore
-    const usersRef = adminDb.collection('users');
-    const existingUsers = await usersRef.where('email', '==', userData.email).get();
-    
-    if (!existingUsers.empty) {
+    const email = normalizeEmail(userData.email);
+
+    if (userData.password.length < 8) {
+      return { success: false, message: 'Password must be at least 8 characters' };
+    }
+
+    if (await findUserDocByEmail(userData.email)) {
       return { success: false, message: 'User with this email already exists' };
     }
 
-    // Create Firebase Auth user using Admin SDK
     const userRecord = await adminAuth.createUser({
-      email: userData.email,
+      email,
       password: userData.password,
       displayName: userData.name,
       emailVerified: false,
     });
 
-    // Generate OTP
     const otpCode = generateOTP();
-    const otpExpiry = getOTPExpiry();
+    const now = new Date();
 
-    // Create user document in Firestore using Admin SDK
     const newUser: User = {
       uid: userRecord.uid,
-      email: userData.email,
+      email,
       role: userData.role,
-      name: userData.name,
-      createdAt: new Date(),
+      name: userData.name.trim(),
+      createdAt: now,
       emailVerified: false,
-      otpCode,
-      otpExpiry,
+      otpHash: hashOTP(otpCode, email),
+      otpExpiry: getOTPExpiry(),
       otpAttempts: 0,
+      otpLastSentAt: now,
+      otpSendCount: 1,
+      otpSendWindowStart: now,
       linkedTuitions: [],
     };
 
     await adminDb.collection('users').doc(userRecord.uid).set(newUser);
 
-    // Send OTP
-    const otpResult = await sendOTPEmail(userData.email, userData.name, otpCode);
-    
+    const otpResult = await sendOTPEmail(email, newUser.name, otpCode);
     if (!otpResult.success) {
       console.error('Failed to send OTP:', otpResult.message);
-      // Don't fail registration if OTP sending fails, but log it
     }
 
-    return { 
-      success: true, 
-      message: 'User registered successfully. Please check the console for your OTP code to verify your account.', 
-      uid: userRecord.uid 
+    return {
+      success: true,
+      message: 'Account created. Check your email for a verification code.',
+      uid: userRecord.uid,
     };
   } catch (error: unknown) {
     console.error('Registration error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Registration failed';
-    return { success: false, message: errorMessage };
+    const code = (error as { code?: string }).code;
+    if (code === 'auth/email-already-exists') {
+      return { success: false, message: 'User with this email already exists' };
+    }
+    if (code === 'auth/invalid-password') {
+      return { success: false, message: 'Password must be at least 8 characters' };
+    }
+    if (code === 'auth/invalid-email') {
+      return { success: false, message: 'Invalid email address' };
+    }
+    return { success: false, message: 'Registration failed. Please try again.' };
   }
 }
 
 export async function getUserData(uid: string): Promise<User | null> {
   try {
-    const adminDb = getAdminDb();
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    if (userDoc.exists) {
-      return userDoc.data() as User;
-    }
-    return null;
+    const userDoc = await getAdminDb().collection('users').doc(uid).get();
+    return userDoc.exists ? (userDoc.data() as User) : null;
   } catch (error) {
     console.error('Error fetching user data:', error);
     return null;
@@ -96,140 +132,111 @@ export async function getUserData(uid: string): Promise<User | null> {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
-    const adminDb = getAdminDb();
-    const usersRef = adminDb.collection('users');
-    const querySnapshot = await usersRef.where('email', '==', email).get();
-    
-    if (!querySnapshot.empty) {
-      return querySnapshot.docs[0].data() as User;
-    }
-    return null;
+    const doc = await findUserDocByEmail(email);
+    return doc ? (doc.data() as User) : null;
   } catch (error) {
     console.error('Error fetching user by email:', error);
     return null;
   }
 }
 
-export async function verifyUserOTP(email: string, otpCode: string): Promise<{ success: boolean; message: string }> {
+export async function verifyUserOTP(rawEmail: string, otpCode: string): Promise<Result> {
   try {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    
-    // Find user by email
-    const usersRef = adminDb.collection('users');
-    const querySnapshot = await usersRef.where('email', '==', email).get();
-    
-    if (querySnapshot.empty) {
-      return { success: false, message: 'User not found' };
-    }
+    const email = normalizeEmail(rawEmail);
+    const userDoc = await findUserDocByEmail(rawEmail);
 
-    const userDoc = querySnapshot.docs[0];
+    // Same message for "no such user" and "already verified" so this endpoint can't be used
+    // to discover which emails are registered.
+    if (!userDoc) return { success: false, message: GENERIC_OTP_FAILURE };
+
     const userData = userDoc.data() as User;
-
-    // Check if already verified
-    if (userData.emailVerified) {
-      return { success: false, message: 'Email is already verified' };
+    if (userData.emailVerified || !userData.otpHash) {
+      return { success: false, message: GENERIC_OTP_FAILURE };
     }
 
-    // Check if OTP exists
-    if (!userData.otpCode) {
-      return { success: false, message: 'No OTP found. Please request a new one.' };
+    const attempts = userData.otpAttempts || 0;
+    if (attempts >= OTP_MAX_ATTEMPTS) {
+      return { success: false, message: 'Too many failed attempts. Please request a new code.' };
     }
 
-    // Check OTP attempts (limit to 5 attempts)
-    const maxAttempts = 5;
-    const currentAttempts = userData.otpAttempts || 0;
-    
-    if (currentAttempts >= maxAttempts) {
-      return { success: false, message: 'Too many failed attempts. Please request a new OTP.' };
+    const expiry = toDate(userData.otpExpiry);
+    if (!expiry || isOTPExpired(expiry)) {
+      return { success: false, message: 'Code has expired. Please request a new one.' };
     }
 
-    // Check if OTP has expired
-    const otpExpiry = userData.otpExpiry;
-    
-    if (otpExpiry && otpExpiry instanceof Date && isOTPExpired(otpExpiry)) {
-      return { success: false, message: 'OTP has expired. Please request a new one.' };
-    }
-
-    if (otpExpiry && 'toDate' in otpExpiry && typeof otpExpiry.toDate === 'function') {
-      const expiryDate = otpExpiry.toDate();
-      if (isOTPExpired(expiryDate)) {
-        return { success: false, message: 'OTP has expired. Please request a new one.' };
-      }
-    }
-
-    // Verify OTP
-    if (!verifyOTPCode(otpCode, userData.otpCode)) {
-      // Increment failed attempts
-      await userDoc.ref.update({
-        otpAttempts: currentAttempts + 1,
-      });
-      
-      const remainingAttempts = maxAttempts - (currentAttempts + 1);
-      return { 
-        success: false, 
-        message: `Invalid OTP code. ${remainingAttempts} attempts remaining.` 
+    if (!verifyOTPCode(String(otpCode).trim(), email, userData.otpHash)) {
+      await userDoc.ref.update({ otpAttempts: attempts + 1 });
+      const remaining = OTP_MAX_ATTEMPTS - (attempts + 1);
+      return {
+        success: false,
+        message: remaining > 0 ? `Invalid code. ${remaining} attempts remaining.` : 'Too many failed attempts. Please request a new code.',
       };
     }
 
-    // OTP is valid - verify the user
     await userDoc.ref.update({
       emailVerified: true,
+      otpHash: null,
       otpCode: null,
       otpExpiry: null,
       otpAttempts: null,
     });
+    await getAdminAuth().updateUser(userData.uid, { emailVerified: true });
 
-    // Update Firebase Auth user
-    await adminAuth.updateUser(userData.uid, {
-      emailVerified: true,
-    });
-
-    // Send welcome email
-    const welcomeEmailResult = await sendWelcomeEmail(userData.email, userData.name, userData.role);
-    
-    if (!welcomeEmailResult.success) {
-      console.error('Failed to send welcome email:', welcomeEmailResult.message);
-      // Don't fail verification if welcome email fails
+    const welcome = await sendWelcomeEmail(userData.email, userData.name, userData.role);
+    if (!welcome.success) {
+      console.error('Failed to send welcome email:', welcome.message);
     }
 
     return { success: true, message: 'Email verified successfully!' };
   } catch (error) {
     console.error('OTP verification error:', error);
-    return { success: false, message: 'Failed to verify OTP' };
+    return { success: false, message: 'Failed to verify code' };
   }
 }
 
-export async function resendOTP(email: string): Promise<{ success: boolean; message: string }> {
+export async function resendOTP(rawEmail: string): Promise<Result> {
   try {
-    const adminDb = getAdminDb();
-    const user = await getUserByEmail(email);
-    
-    if (!user) {
-      return { success: false, message: 'User not found' };
+    const email = normalizeEmail(rawEmail);
+    const userDoc = await findUserDocByEmail(rawEmail);
+
+    // Don't reveal whether the account exists or is already verified.
+    if (!userDoc) return { success: true, message: GENERIC_RESEND_MESSAGE };
+    const user = userDoc.data() as User;
+    if (user.emailVerified) return { success: true, message: GENERIC_RESEND_MESSAGE };
+
+    const now = new Date();
+
+    const lastSent = toDate(user.otpLastSentAt);
+    if (lastSent && now.getTime() - lastSent.getTime() < OTP_RESEND_COOLDOWN_SECONDS * 1000) {
+      const wait = Math.ceil((OTP_RESEND_COOLDOWN_SECONDS * 1000 - (now.getTime() - lastSent.getTime())) / 1000);
+      return { success: false, message: `Please wait ${wait} seconds before requesting another code.` };
     }
 
-    if (user.emailVerified) {
-      return { success: false, message: 'Email is already verified' };
+    const windowStart = toDate(user.otpSendWindowStart);
+    const inWindow = !!windowStart && now.getTime() - windowStart.getTime() < 60 * 60 * 1000;
+    const sendCount = inWindow ? user.otpSendCount || 0 : 0;
+    if (sendCount >= OTP_MAX_SENDS_PER_HOUR) {
+      return { success: false, message: 'Too many codes requested. Please try again in an hour.' };
     }
 
-    // Generate new OTP
     const otpCode = generateOTP();
-    const otpExpiry = getOTPExpiry();
-
-    // Reset attempts and update user with new OTP
-    await adminDb.collection('users').doc(user.uid).update({
-      otpCode,
-      otpExpiry,
+    await userDoc.ref.update({
+      otpHash: hashOTP(otpCode, email),
+      otpCode: null, // clear any legacy plaintext code
+      otpExpiry: getOTPExpiry(),
       otpAttempts: 0,
+      otpLastSentAt: now,
+      otpSendCount: sendCount + 1,
+      otpSendWindowStart: inWindow ? windowStart : now,
     });
 
-    // Send OTP
-    const otpResult = await sendOTPEmail(user.email, user.name, otpCode);
-    
-    return otpResult;
+    const sent = await sendOTPEmail(email, user.name, otpCode);
+    if (!sent.success) {
+      return { success: false, message: 'Could not send the code. Please try again later.' };
+    }
+    return { success: true, message: GENERIC_RESEND_MESSAGE };
   } catch (error) {
     console.error('Resend OTP error:', error);
-    return { success: false, message: 'Failed to resend OTP' };
+    return { success: false, message: 'Failed to resend code' };
   }
 }

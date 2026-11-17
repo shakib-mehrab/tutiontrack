@@ -67,14 +67,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    // Delete the class log
-    await adminDb.collection('classLogs').doc(logId).delete();
-
-    // Update tuition class count (decrement by 1)
-    const newTakenClasses = Math.max(0, tuition.takenClasses - 1);
-    await adminDb.collection('tuitions').doc(tuitionId).update({
-      takenClasses: newTakenClasses,
-      updatedAt: new Date(),
+    // Delete the log and decrement the count atomically
+    const tuitionRef = adminDb.collection('tuitions').doc(tuitionId);
+    const logRef = adminDb.collection('classLogs').doc(logId);
+    const newTakenClasses = await adminDb.runTransaction(async (tx) => {
+      const [freshTuition, freshLog] = await Promise.all([tx.get(tuitionRef), tx.get(logRef)]);
+      const current = (freshTuition.data() as Tuition | undefined)?.takenClasses ?? 0;
+      if (!freshLog.exists) return current; // already deleted by a concurrent request
+      const next = Math.max(0, current - 1);
+      tx.delete(logRef);
+      tx.update(tuitionRef, { takenClasses: next, updatedAt: new Date() });
+      return next;
     });
 
     return NextResponse.json({
