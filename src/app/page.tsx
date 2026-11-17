@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
-import { BookOpen, Check, CreditCard } from 'lucide-react';
+import { BookOpen, Check, CreditCard, Download, RefreshCw, Smartphone } from 'lucide-react';
 import { authOptions } from '@/lib/auth';
 import { Logo } from '@/components/logo';
 import { buttonClass } from '@/components/ui/styles';
+
+// Always the newest Android build (published by the TuitionTrack app repo's release workflow).
+const APK_URL = 'https://github.com/shakib-mehrab/TuitionTrack/releases/latest/download/TuitionTrack.apk';
+const RELEASES_URL = 'https://github.com/shakib-mehrab/TuitionTrack/releases';
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
@@ -21,6 +25,9 @@ export default async function LandingPage() {
             </a>
             <a href="#how" className="hidden rounded-xl px-3.5 py-2.5 text-sm font-semibold text-muted no-underline hover:bg-mist sm:inline">
               How it works
+            </a>
+            <a href="#android" className="hidden rounded-xl px-3.5 py-2.5 text-sm font-semibold text-muted no-underline hover:bg-mist sm:inline">
+              Android app
             </a>
             <Link href="/auth/signin" className="rounded-xl px-3.5 py-2.5 text-sm font-bold text-ink no-underline hover:bg-mist">
               Sign in
@@ -50,7 +57,12 @@ export default async function LandingPage() {
                 Sign in
               </Link>
             </div>
-            <span className="text-[13px] text-muted">Works in the browser. Add it to your home screen to use it like an app.</span>
+            <span className="text-[13px] text-muted">
+              Works in the browser and installs to your home screen.{' '}
+              <a href="#android" className="font-bold no-underline">
+                Prefer an Android app? Download it here.
+              </a>
+            </span>
           </div>
 
           <div aria-hidden className="relative grid min-h-[520px] flex-[1_1_380px] place-items-center">
@@ -93,6 +105,49 @@ export default async function LandingPage() {
               Assign work with a due date. Your student sees it in their own app and can ask questions right on the task.
             </Feature>
           </div>
+        </section>
+
+        <section id="android" className="flex scroll-mt-6 flex-wrap items-center gap-8 rounded-[32px] bg-surface p-8 shadow-[var(--shadow-card)] sm:p-10">
+          <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-4">
+            <span className="inline-flex items-center gap-2 self-start rounded-full bg-mint-soft px-3 py-2 text-[13px] font-bold text-mint-ink">
+              <Smartphone className="h-4 w-4" aria-hidden />
+              Android app · v2
+            </span>
+            <h2 className="text-[30px] leading-tight font-extrabold tracking-tight">TuitionTrack for Android</h2>
+            <p className="max-w-[48ch] text-[15px] leading-relaxed text-body">
+              The same design as the website, built as a native app: log classes from the home screen, get notified when classes and fees are
+              updated, and share payment slips straight to WhatsApp.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a href={APK_URL} className={buttonClass('primary', 'lg')}>
+                <Download className="h-5 w-5" aria-hidden />
+                Download APK
+              </a>
+              <a href={RELEASES_URL} target="_blank" rel="noreferrer" className={buttonClass('outline', 'lg', 'text-ink')}>
+                All versions
+              </a>
+            </div>
+            <p className="text-[13px] leading-relaxed text-muted">
+              The Android app has its own accounts, separate from this website.
+            </p>
+          </div>
+          <ol className="m-0 flex min-w-0 flex-[1_1_300px] list-none flex-col gap-3 p-0">
+            {[
+              ['Download', 'Tap “Download APK” on your Android phone.'],
+              ['Install', 'Open the downloaded file. If asked, allow installs from your browser.'],
+              ['Stay updated', 'New versions show an “Update available” card inside the app.'],
+            ].map(([title, body], i) => (
+              <li key={title} className="flex items-start gap-3.5 rounded-2xl bg-mist p-4">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-sm font-extrabold text-white">
+                  {i === 2 ? <RefreshCw className="h-4 w-4" aria-hidden /> : i + 1}
+                </span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[15px] font-bold">{title}</span>
+                  <span className="text-sm leading-relaxed text-muted">{body}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <section id="how" className="flex scroll-mt-6 flex-col gap-7 rounded-[32px] bg-ink p-8 text-white sm:p-10">
